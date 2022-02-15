@@ -1,4 +1,4 @@
-# THe Numskull programming language
+# The Numskull programming language
  An esoteric programming language where numbers are mutable
 
 ## What is this?
