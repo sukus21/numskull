@@ -1,7 +1,7 @@
 # Numskull
  An esoteric programming language where numbers are mutable
 
-### What is this?
+## What is this?
  This project exists for 3 reasons:
  I wanted to learn GO,
  I always wanted to make my own programming language,
@@ -9,4 +9,6 @@
  
  I've been toying with the idea of a programming language where numbers are mutable for a while, and finally decided to spend a weekend designing it and making an interpreter for it. Since i only spent a weekend on it, the interpreter has some weird code, and syntax checking won't always work out. That is what updates are for, I guess.
 
- Anything you could want to know about the language should exist within 
+## Documentation
+ - Anything you could possibly want to know about the language should exist within the [Language Specification](github.com/sukus21/numskull/blob/main/Language%20Specification.md).
+ - The interpreter is command line based and has a built in `--help` argument, but I still went ahead and wrote [Interpreter Usage](github.com/sukus21/numskull/USAGE.md)

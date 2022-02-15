@@ -26,7 +26,7 @@
 
  *Example:* `numskull --help v`
  <br>
- Shows the help page for the parameter `-v`. The program stops once help has been printed.
+ Shows the help page for the parameter [`-v`](#-v---version). The program stops once help has been printed.
 
 ### `-v`, `--version`
  Prints program and language version number.
@@ -40,7 +40,7 @@
  <br>
  If this argument isn't present, input is given through the console.
  <br>
- Input file will be read as binary by default. Look under [File IO](#reading--writing-data) for more information.
+ Input file will be read as binary by default. Pass in [`-t`](#-t---type) to prevent this. Look under [Reading / writing data](#reading--writing-data) for more information.
 
  *Example:* `numskull -i numbers.bin program.nms`
  <br>
@@ -56,7 +56,7 @@
  Entries are read as numbers, seperated by whitespace (tabs, spaces, or newlines).
  An incorrectly formatted entry will cause an error when trying to read it.
  <br>
- If the `-i` argument isn't present, this argument does nothing.
+ If the [`-i`](#-i---input-path) argument isn't present, this argument does nothing.
 
 ### `-o`, `--output <path>`
  Print output to a given file.
@@ -66,7 +66,7 @@
  The file is treated as a byte array.
 
  If this argument isn't present, the output of the program is displayed in the console.
- If you still want console output AND saving to a file, use the `-c` argument.
+ If you still want console output AND saving to a file, use the [`-c`](#-c---console) argument.
  <br>
  If the program stops due to an error, the file is still saved.
 
@@ -79,11 +79,16 @@
  <br>
  When outputting to a file, console output is turned off by default.
  <br>
- Use this argument to reenable it, while also writing the output to a file, using `-o`.
+ Use this argument to reenable it, while also writing the output to a file, using [`-o`](#-o---output-path).
  <br>
- If the `-o` argument isn't present, this argument does nothing.
+ If the [`-o`](#-o---output-path) argument isn't present, this argument does nothing.
 
 ## Reading / writing data
  All output is by default treated as a console, which characters can be written to. When writing via the `!` operator, multiple characters are written, and when outputting via the `#` operator, only one character is written.
 
- By default, this data only goes to the console the interpreter runs in. If a file is passed in using the [`-o`](#-o---output-path) argument, 
+ By default, this data only goes to the console the interpreter runs in. If a file is passed in using the [`-o`](#-o---output-path) argument, output only goes to the file and not to the console. If you want both, pass in both [`-o`](#-o---output-path) and [`-c`](#-c---console).
+
+ When requesting input using the `"` operator, the interpreter will by default pause execution until the user writes something in the console. To stop this behaviour, pass in [`-i`](#-i---input-path) to make it instantly read input from a file. By default, the input read will be binary, but this behaviour can be changed by passing in [`-t`](#-t---type). This makes the program read numbers as text instead.
+
+ When the end of a file has been reached, the `"` operator will always return `-1`.
+ Input files are processed before the program runs, so if a text based input file contains a syntax error, the program won't run.

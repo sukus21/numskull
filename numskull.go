@@ -74,21 +74,22 @@ func main() {
 			case "h", "H", "help":
 				fmt.Println(usage_h)
 				fmt.Println()
-				fmt.Println("Example: numskull", "--"+os.Args[argPos], "v")
+				fmt.Println("Example: numskull", os.Args[argPos-1], "v")
 				fmt.Println("Shows the help page for the parameter '-v'.")
 				fmt.Println("The program stops once help has been printed.")
 
 			//Help for the input tag
 			case "i", "I", "input":
-				fmt.Println(usage_i)
 				if len(os.Args[argPos]) != 1 {
 					os.Args[argPos] = "-" + os.Args[argPos]
 				}
+				fmt.Println(usage_i)
+				fmt.Println()
 				fmt.Println("When reading after the end of file, the result is always -1.")
-				fmt.Println("If no file is specified, input is given through the console.")
+				fmt.Println("If this argument isn't present, input is given through the console.")
 				fmt.Println("Input file will be read as binary by default, look up \"numskull --help -t\" for more info.")
 				fmt.Println()
-				fmt.Println("Example: numskull", "-"+os.Args[argPos], "\"C:\\numbers.bin\" \"C:\\program.nms\"")
+				fmt.Println("Example: numskull", "-"+os.Args[argPos], "numbers.bin program.nms")
 				fmt.Println("Opens program.nms, and reads from numbers.bin when reading input.")
 
 			//Help for the output tag
@@ -97,13 +98,14 @@ func main() {
 					os.Args[argPos] = "-" + os.Args[argPos]
 				}
 				fmt.Println(usage_o)
+				fmt.Println()
 				fmt.Println("When outputting, you can choose to also write that output to a file.")
 				fmt.Println("The file is treated as a byte array.")
-				fmt.Println("If no file is specified, the output of the program is displayed in the console.")
+				fmt.Println("If this argument isn't present, the output of the program is displayed in the console.")
 				fmt.Println("If you still want console output AND saving to a file, use the \"-c\" argument.")
 				fmt.Println("If the program stops due to an error, the file is still saved.")
 				fmt.Println()
-				fmt.Println("Example: numskull", "-"+os.Args[argPos], "\"C:\\numbers.bin\" \"C:\\program.nms\"")
+				fmt.Println("Example: numskull", "-"+os.Args[argPos], "numbers.bin program.nms")
 				fmt.Println("Opens program.nms, and saves output to numbers.bin, once the program stops running.")
 
 			//Help for the type tag
@@ -112,6 +114,7 @@ func main() {
 					os.Args[argPos] = "-" + os.Args[argPos]
 				}
 				fmt.Println(usage_t)
+				fmt.Println()
 				fmt.Println("Normally when reading input from a file, the input will be read as binary.")
 				fmt.Println("That is, one byte per input, each consisting of a number from 0 to 255.")
 				fmt.Println("Some may not want this behaviour, so passing in", "-"+os.Args[argPos], "will make input read as text.")
@@ -122,8 +125,9 @@ func main() {
 			//Help for the console tag
 			case "c", "C", "console":
 				fmt.Println(usage_c)
+				fmt.Println()
 				fmt.Println("When outputting to a file, console output is turned off by default.")
-				fmt.Println("Use this tag to reenable it, while also writing the output to a file, using -o.")
+				fmt.Println("Use this argument to reenable it, while also writing the output to a file, using -o.")
 				fmt.Println("If the -o argument isn't present, this argument does nothing.")
 
 			default:
@@ -139,7 +143,7 @@ func main() {
 		//Print numskull version
 		case "-v", "-V", "--version":
 			fmt.Println("Numskull interpreter v0.1.0")
-			fmt.Println("Supports Numskull version 1.0")
+			fmt.Println("runs Numskull version 1.0")
 			somethingDone = true
 
 		//Force console output
@@ -836,7 +840,7 @@ func runProgram() error {
 
 //Prints program usage
 func printUsage() {
-	fmt.Println("Usage: numskull [-i file] [-t] [-o file] [-c] <program file>")
+	fmt.Println("Usage: numskull [-i file] [-t] [-o file] [-c] <program-file>")
 	fmt.Println("Useful options:")
 	fmt.Println("\t", usage_h)
 	fmt.Println("\t", usage_v)
