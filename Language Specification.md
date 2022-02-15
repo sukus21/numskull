@@ -169,5 +169,7 @@
 ## More information
  The interpreter is commandline based, and will likely remain so.
  For more information on how it works and what options are available, run the interpreter from the commandline with `--help`.
-
- The original Numskull interpreter is open source, and can be found on [Github](http://github.com/sukus21/numskull).
+ 
+ ---
+ 
+ This project is maintained on [Github](http://github.com/sukus21/numskull).
