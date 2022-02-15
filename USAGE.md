@@ -86,4 +86,4 @@
 ## Reading / writing data
  All output is by default treated as a console, which characters can be written to. When writing via the `!` operator, multiple characters are written, and when outputting via the `#` operator, only one character is written.
 
- By default, this data only goes to the console the interpreter runs in. If a file is passed in using the [`-o`](#-o,---output-<path>) argument, 
+ By default, this data only goes to the console the interpreter runs in. If a file is passed in using the [`-o`](#-o---output-path) argument, 
