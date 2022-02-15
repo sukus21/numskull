@@ -12,4 +12,7 @@
 ## Documentation
  - Anything you could possibly want to know about the language should exist within the [Language Specification](/Language%20Specification.md).
  - The interpreter is command line based and has a built in `--help` argument, but I still went ahead and wrote [Interpreter Usage](/USAGE.md)
- - The project is maintained on [Github](http://github.com/sukus21/numskull)
+
+---
+
+This project is maintained on [Github](http://github.com/sukus21/numskull).
