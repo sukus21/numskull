@@ -92,3 +92,7 @@
 
  When the end of a file has been reached, the `"` operator will always return `-1`.
  Input files are processed before the program runs, so if a text based input file contains a syntax error, the program won't run.
+ 
+ ---
+ 
+ This project is maintained on [Github](http://github.com/sukus21/numskull).
