@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"main/parser"
+	"numskull/parser"
 	"os"
 	"strconv"
 )
