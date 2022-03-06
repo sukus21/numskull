@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"main/parser"
 	"os"
 	"strconv"
 )
@@ -32,7 +33,7 @@ var outputFile *os.File = nil
 func main() {
 
 	//Uncomment only for debugging
-	//os.Args = []string{os.Args[0], "-i", "hello.bf", "-o", "out.txt", "program.txt"}
+	os.Args = []string{os.Args[0], "-i", "hello.bf", "-o", "out.txt", "example programs/brainfrick.nms"}
 
 	//No arguments provided
 	fmt.Println()
@@ -328,7 +329,10 @@ func main() {
 	}
 
 	//Start executing it
+	parser.ParseProgram()
 	err = runProgram()
+
+	//Handle program output
 	fmt.Println()
 	fmt.Println()
 	if err != nil {
