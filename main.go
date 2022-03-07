@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"numskull/parser"
+	"numskull/utils"
 	"os"
-	"strconv"
 )
 
 const (
@@ -33,7 +33,7 @@ var outputFile *os.File = nil
 func main() {
 
 	//Uncomment only for debugging
-	os.Args = []string{os.Args[0], "-i", "hello.bf", "-o", "out.txt", "example programs/brainfrick.nms"}
+	os.Args = []string{os.Args[0], "example programs/echo.nms"}
 
 	//No arguments provided
 	fmt.Println()
@@ -299,7 +299,7 @@ func main() {
 				}
 
 				//Convert to number
-				number, err := bytesliceToNumber(numData)
+				number, err := utils.BytesliceToNumber(numData)
 				if err != nil {
 					fmt.Println("Error when converting input file")
 					fmt.Println(err.Error())
@@ -329,7 +329,7 @@ func main() {
 	}
 
 	//Start executing it
-	parser.ParseProgram()
+	parser.ParseProgram(string(program))
 	err = runProgram()
 
 	//Handle program output
@@ -351,217 +351,6 @@ func main() {
 	}
 }
 
-//Error things
-type numskullError_t struct {
-	msg string
-}
-
-//Error message
-func (err numskullError_t) Error() string {
-	return err.msg
-}
-
-//Grab number
-func getExpression(memoryLookup bool) (float64, error) {
-
-	numberData := make([]byte, 512)[:0]
-	var foundChar bool = false
-	var foundComma bool = false
-
-	for breakLoop := false; readPos < len(program) && !breakLoop; {
-
-		//Switch per character
-		switch char := getNextChar(); char {
-
-		//Regular numbers
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			numberData = append(numberData, char)
-			foundChar = true
-
-		//Negative stuff
-		case '-':
-			if !foundChar {
-				numberData = append(numberData, char)
-			} else {
-				breakLoop = true
-				readPos--
-			}
-
-		//Signify that this is a decimal number
-		case '.', ',':
-
-			//Append a 0 to the front
-			if !foundChar {
-				numberData = append(numberData, '0')
-				foundChar = true
-			}
-
-			//Was another comma already seen?
-			if foundComma {
-				var err numskullError_t
-				err.msg = "Double commas in number declaration."
-				return 0, err
-			}
-
-			//Set sum variables
-			numberData = append(numberData, '.')
-			foundComma = true
-
-		//Unknown character, throw an error
-		default:
-
-			//Straight up ignore this
-			if char == '}' {
-				break
-			}
-
-			//Jump maybe
-			if char == ']' {
-				if !foundChar {
-
-					//Find matching opening bracket
-					readPos -= 2
-					for depth := 1; depth != 0 && readPos >= 0; {
-						char := getPreviousNonWhitespace()
-						if char == ']' {
-							depth++
-						} else if char == '[' {
-							depth--
-						}
-					}
-
-					//Is there not an opening bracket?
-					if readPos >= len(program) {
-						var err numskullError_t
-						err.msg = "Expected an opening loop bracket '['. Never found one."
-						return 0, err
-					}
-
-					//Jump to start of line
-					char := byte(0)
-					for {
-						char = getPreviousChar()
-						if isNewline(char) || char == 0 {
-							break
-						}
-					}
-
-					//Here we are
-					break
-
-				} else {
-
-					//Unexpected character encountered
-					var err numskullError_t
-					err.msg = "Expected character encountered, '" + string(char) + "'."
-					return 0, err
-				}
-			}
-
-			//Ignore
-			if isWhitespace(char) {
-				if foundChar {
-					breakLoop = true
-					break
-				}
-				break
-			}
-
-			//We done readin bois
-			readPos--
-			breakLoop = true
-		}
-	}
-
-	//Convert to number
-	number, err := bytesliceToNumber(numberData)
-	if err != nil {
-		return 0, nil
-	}
-
-	//We have us a number!
-	//Read from memory or nah?
-	if memoryLookup {
-		return memoryRead(number), nil
-	}
-
-	//Not supposed to look at memory, return number itself
-	return number, nil
-}
-
-//Get the next program character that ISN'T whitespace
-func getNextNonWhitespace() byte {
-	for readPos < len(program) {
-		if val := getNextChar(); !isWhitespace(val) {
-			return val
-		}
-	}
-
-	return 0
-}
-
-//Get the previous program character that ISN'T whitespace
-func getPreviousNonWhitespace() byte {
-	for readPos >= 0 {
-		if val := getPreviousChar(); !isWhitespace(val) {
-			return val
-		}
-	}
-
-	//Nothing was found
-	readPos = 0
-	return 0
-}
-
-//Get the next character
-func getNextChar() byte {
-	if readPos == len(program) {
-		return 0
-	}
-
-	char := program[readPos]
-	readPos++
-	return char
-}
-
-//Get the previous character
-func getPreviousChar() byte {
-	if readPos < 0 {
-		readPos = 0
-		return 0
-	}
-
-	char := program[readPos]
-	readPos--
-	return char
-}
-
-//Is the given character whitespace or not?
-func isWhitespace(char byte) bool {
-
-	//Is the character any of the given values?
-	switch char {
-	case ' ', '\n', '\t', 0x0D:
-		return true
-	}
-
-	//It wasn't any of those, so not whitespace
-	return false
-}
-
-//Is the given character newline or not?
-func isNewline(char byte) bool {
-
-	//Is the character any of the given values?
-	switch char {
-	case '\n', 0x0D:
-		return true
-	}
-
-	//It wasn't any of those, so not newline
-	return false
-}
-
 //Read from memory
 func memoryRead(pos float64) float64 {
 
@@ -578,265 +367,6 @@ func memoryRead(pos float64) float64 {
 
 //Main program function
 func runProgram() error {
-	outOfLoop := false
-	for !outOfLoop {
-
-		//Left-hand operator
-		lefthand, err := getExpression(false)
-		if err != nil {
-			return err
-		}
-
-		//Repeat this for as long as needed (lefthand modification)
-		leaveInnerLoop := false
-		for !leaveInnerLoop {
-			leaveInnerLoop = true
-
-			//What operation do we do?
-			nchar := getNextNonWhitespace()
-			switch nchar {
-
-			//Assign a value
-			case '=':
-
-				//Get righthand expression
-				righthand, err := getExpression(true)
-				if err != nil {
-					return err
-				}
-
-				//Value is valid, assign it
-				memory[lefthand] = righthand
-
-			//Modify and assign
-			case '-', '+', '*', '/':
-				next := getNextChar()
-
-				//Decrement?
-				if nchar == '-' && next == '-' {
-
-					//Perform decrementation
-					memory[lefthand] = memoryRead(lefthand) - 1
-					break
-				}
-
-				//Increment?
-				if nchar == '+' && next == '+' {
-
-					//Perform incrementation
-					memory[lefthand] = memoryRead(lefthand) + 1
-					break
-				}
-
-				//Modification assignment?
-				if next == '=' {
-
-					//Get righthand expression
-					righthand, err := getExpression(true)
-					if err != nil {
-						return err
-					}
-
-					//Value is valid, modify it
-					switch nchar {
-					case '+':
-						memory[lefthand] = memoryRead(lefthand) + memoryRead(righthand)
-					case '-':
-						memory[lefthand] = memoryRead(lefthand) - memoryRead(righthand)
-					case '*':
-						memory[lefthand] = memoryRead(lefthand) * memoryRead(righthand)
-					case '/':
-						memory[lefthand] = memoryRead(lefthand) / memoryRead(righthand)
-					}
-					break
-				}
-
-				//Lefthand modification?
-				if nchar == '+' || nchar == '-' {
-
-					//Get valid expression
-					readPos--
-					val, err := getExpression(true)
-					if err != nil {
-						return err
-					}
-
-					//Negate offset maybe
-					if nchar == '-' {
-						val = -val
-					}
-
-					//Change lefthand operator
-					lefthand += val
-					leaveInnerLoop = false
-				}
-
-			//Print numeric value
-			case '!':
-				if consoleOutput {
-					fmt.Print(memoryRead(lefthand))
-				}
-				if writeToFile {
-					outputFile.WriteString(fmt.Sprint(memoryRead(lefthand)))
-				}
-
-			//Print ascii character
-			case '#':
-				if consoleOutput {
-					fmt.Print(string(byte(memoryRead(lefthand))))
-				}
-				if writeToFile {
-					outputFile.Write([]byte{(byte(memoryRead(lefthand)))})
-				}
-
-			//Read input
-			case '"':
-
-				//Read value
-				val, err := getInput()
-				if err != nil {
-					return err
-				}
-
-				//Assign it to memory
-				memory[lefthand] = val
-
-			//Condition
-			case '?':
-
-				//What type of comparison?
-				comptype := getNextChar()
-				switch comptype {
-				case '=': //Equals
-				case '!': //NOT equals
-				case '<': //Less than
-					if getNextChar() == '=' {
-						comptype = '('
-					} else {
-						readPos--
-					}
-				case '>': //Greater than
-					if getNextChar() == '=' {
-						comptype = ')'
-					} else {
-						readPos--
-					}
-				default: //No known comparison type
-					var err numskullError_t
-					err.msg = "Expected comparison type, got '" + string(comptype) + "'."
-					return err
-				}
-
-				righthand, err := getExpression(true)
-				if err != nil {
-					return err
-				}
-
-				//Expect an opening bracket
-				var openingBracket byte = getNextNonWhitespace()
-				var closingBracket byte = 0
-				switch openingBracket {
-				case '{':
-					closingBracket = '}'
-				case '[':
-					closingBracket = ']'
-				default:
-					var err numskullError_t
-					err.msg = "Expected an opening bracket. Did not find one."
-					return err
-				}
-
-				//evaluate condition
-				expressionTrue := false
-				switch comptype {
-				case '=':
-					expressionTrue = memoryRead(lefthand) == memoryRead(righthand)
-				case '!':
-					expressionTrue = memoryRead(lefthand) != memoryRead(righthand)
-				case '<':
-					expressionTrue = memoryRead(lefthand) < memoryRead(righthand)
-				case '>':
-					expressionTrue = memoryRead(lefthand) > memoryRead(righthand)
-				case '(':
-					expressionTrue = memoryRead(lefthand) <= memoryRead(righthand)
-				case ')':
-					expressionTrue = memoryRead(lefthand) >= memoryRead(righthand)
-				}
-
-				//Await closing bracket
-				if !expressionTrue {
-
-					for depth := 1; depth != 0 && readPos < len(program); {
-						char := getNextNonWhitespace()
-						if char == openingBracket {
-							depth++
-						} else if char == closingBracket {
-							depth--
-						}
-					}
-
-					//Is there not a closing bracket?
-					if readPos >= len(program) && program[readPos-1] != closingBracket {
-						var err numskullError_t
-						err.msg = "Expected a closing bracket '" + string(closingBracket) + "'. Never found one."
-						return err
-					}
-				}
-
-			//Unknown
-			default:
-
-				//Read unknown action
-				action := make([]byte, 512)[:0]
-				readPos--
-				for {
-					char := getNextChar()
-					if char == 0 || isWhitespace(char) {
-						break
-					}
-					action = append(action, char)
-				}
-
-				var err numskullError_t
-				err.msg = "Unknown action, \"" + string(action) + "\"."
-				return err
-			}
-		}
-
-		//Expect newline
-		for char := byte(0); true; {
-			char = getNextChar()
-
-			//This was a newline
-			if isNewline(char) || char == 0 {
-				break
-			} else if isWhitespace(char) {
-				continue
-			} else {
-				//Read the rest of the line
-				readPos--
-				remainder := make([]byte, 512)[:0]
-				for {
-					char := getNextChar()
-					if char == 0 || isNewline(char) {
-						break
-					}
-					remainder = append(remainder, char)
-				}
-
-				//Return error
-				var err numskullError_t
-				err.msg = "Expected newline, got \"" + string(remainder) + "\"."
-				return err
-			}
-		}
-
-		//Is there even any more program left?
-		if getNextNonWhitespace() == 0 {
-			outOfLoop = true
-		}
-		readPos--
-	}
 
 	//Everything worked out
 	return nil
@@ -852,39 +382,6 @@ func printUsage() {
 	fmt.Println("\t", usage_t)
 	fmt.Println("\t", usage_o)
 	fmt.Println("\t", usage_c)
-}
-
-//Converts a slice of bytes to a float64
-func bytesliceToNumber(numData []byte) (float64, error) {
-	var err numskullError_t
-
-	//Empty string
-	if len(numData) == 0 {
-		err.msg = "Number has no length."
-		return 0, err
-	}
-
-	//Only a - sign
-	if len(numData) == 1 && numData[0] == '-' {
-		err.msg = "Invalid number, just a - sign."
-		return 0, err
-	}
-
-	//Unclosed comma
-	lastChar := numData[len(numData)-1]
-	if lastChar == ',' || lastChar == '.' {
-		err.msg = "Comma with no value at the end"
-		return 0, err
-	}
-
-	//Convert to number
-	number, errC := strconv.ParseFloat(string(numData), 64)
-	if errC != nil {
-		return 0, errC
-	}
-
-	//Conversion succesful :)
-	return number, nil
 }
 
 func getInput() (float64, error) {
@@ -911,7 +408,7 @@ func getInput() (float64, error) {
 		}
 
 		//Convert this to float64 and return
-		return bytesliceToNumber([]byte(str))
+		return utils.BytesliceToNumber([]byte(str))
 	}
 }
 
