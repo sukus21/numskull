@@ -182,9 +182,21 @@ func tokenizeLines(lines <-chan string, tokens chan<- []float64, errors chan<- e
 	for msg := range lines {
 
 		//Expect a number (or nothing)
+		fmt.Println(msg)
 		pos := 0
 		for {
 			tok, num, err := readToken(msg, &pos)
+			if err != nil {
+				fmt.Println(err.Error(), " ")
+			}
+			fmt.Print(tok.getTokenName())
+			if tok == token_number {
+				fmt.Print(num, " ")
+			}
+			if tok == token_newline {
+				fmt.Println()
+				break
+			}
 		}
 	}
 }
