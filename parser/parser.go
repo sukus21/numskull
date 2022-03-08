@@ -44,65 +44,72 @@ func (err parserError_t) Error() string {
 }
 
 //Token struct
-type token int
+type token float64
 
 func (tok token) getTokenName() string {
 	switch tok {
 	case token_add:
-		return "addition"
+		return "+="
 	case token_sub:
-		return "subtraction"
+		return "-="
 	case token_assign:
-		return "assign"
+		return "="
 	case token_multiply:
-		return "multiplication"
+		return "*="
 	case token_divide:
-		return "division"
+		return "/="
 	case token_increment:
-		return "increment"
+		return "++"
 	case token_decrement:
-		return "decrement"
+		return "--"
 	case token_chainPlus:
-		return "chain plus"
+		return "+"
 	case token_chainMinus:
-		return "chain minus"
+		return "-"
 
 	case token_equals:
-		return "equals"
+		return "?="
 	case token_different:
-		return "different"
+		return "?!"
 	case token_lessEquals:
-		return "less or equals"
+		return "?<="
 	case token_lessThan:
-		return "less than"
+		return "?<"
 	case token_greaterEquals:
-		return "greater or equals"
+		return "?>="
 	case token_greaterThan:
-		return "greater than"
+		return "?>"
 
 	case token_number:
 		return "number"
 	case token_printChar:
-		return "print char"
+		return "#"
 	case token_printNumber:
-		return "print number"
+		return "!"
 	case token_readInput:
-		return "input"
+		return "\""
 
 	case token_curlyStart:
-		return "curly start"
+		return "{"
 	case token_curlyEnd:
-		return "curly end"
+		return "}"
 	case token_squareStart:
-		return "square start"
+		return "["
 	case token_squareEnd:
-		return "square end"
+		return "]"
+	case token_newline:
+		return "newline"
 	case token_invalid:
 		return "invalid"
 
 	default:
 		return "unknown"
 	}
+}
+
+type programContext struct {
+	jumplinepos         int
+	jumplinedestination int
 }
 
 //Preprocess program
@@ -115,7 +122,7 @@ func ParseProgram(raw string) []float64 {
 
 	//Actually preprocess program
 	go programSeperate(raw, lines, errors)
-	tokenizeLines(lines, tokens, errors)
+	go tokenizeLines(lines, tokens, errors)
 
 	program, success := validateTokens(tokens, errors)
 
@@ -180,30 +187,261 @@ func tokenizeLines(lines <-chan string, tokens chan<- []float64, errors chan<- e
 
 	//Repeat for as long as there are lines
 	for msg := range lines {
-
-		//Expect a number (or nothing)
-		fmt.Println(msg)
 		pos := 0
+		line := make([]float64, 0, 16)
 		for {
+
+			//Read token
 			tok, num, err := readToken(msg, &pos)
 			if err != nil {
-				fmt.Println(err.Error(), " ")
+				fmt.Println(err.Error())
 			}
-			fmt.Print(tok.getTokenName())
-			if tok == token_number {
-				fmt.Print(num, " ")
-			}
+
+			//Add token to slice
+			line = append(line, float64(tok))
+
+			//Newline, end of current line
 			if tok == token_newline {
-				fmt.Println()
+				//fmt.Println()
 				break
 			}
+
+			//Was this a number?
+			if tok == token_number {
+				line = append(line, num)
+				//fmt.Print(num, " ")
+			} else {
+				//fmt.Print(tok.getTokenName(), " ")
+			}
 		}
+
+		//Send this slice through channel
+		tokens <- line
 	}
 }
 
 func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bool) {
-	//Poop
-	return nil, false
+
+	//Finished program
+	program := make([]float64, 0, 1024)
+	curlies := make([]programContext, 0, 64)
+	squares := make([]programContext, 0, 64)
+
+	success := true
+	expectBracket := false
+	lastLine := 0
+	linecount := 0
+	lineStart := -1
+
+	for toks := range tokens {
+		linecount++
+
+		//Is there anything on this line
+		if len(toks) == 0 || toks[0] == float64(token_newline) {
+			continue
+		}
+
+		//Expecting start bracket?
+		tok := token(toks[0])
+		if expectBracket {
+			expectBracket = false
+			if tok != token_curlyStart && tok != token_squareStart {
+				var err parserError_t
+				err.msg = fmt.Sprintf("Line %d-%d: Expected starting bracket, got %s.\n", lastLine, linecount, tok.getTokenName())
+				errors <- err
+				success = false
+				continue
+			}
+		}
+
+		//Is this an end bracket?
+		if tok == token_curlyEnd || tok == token_squareEnd {
+			next := token(toks[1])
+
+			//Expect newline
+			if len(toks) > 2 || next != token_newline {
+				var err parserError_t
+				err.msg = fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.getTokenName())
+				errors <- err
+				success = false
+				continue
+			}
+
+			//Pop thing off the relevant stack
+			var cnts *[]programContext
+			if tok == token_curlyEnd {
+				cnts = &curlies
+			} else {
+				cnts = &squares
+			}
+
+			//Check if stack is empty
+			if len(*cnts) == 0 {
+				var err parserError_t
+				err.msg = fmt.Sprintf("Line %d: Unmatched }.\n", linecount)
+				errors <- err
+				success = false
+				continue
+			}
+
+			//It is not
+			cnt := []programContext(*cnts)[len(*cnts)-1]
+			*cnts = []programContext(*cnts)[:len(*cnts)-1]
+
+			//Was is a looping bracket?
+			if tok == token_squareEnd {
+				program = append(program, float64(token_squareEnd), float64(cnt.jumplinepos))
+			}
+			program[cnt.jumplinedestination] = float64(len(program))
+			continue
+		}
+
+		//Then this should be a number
+		if tok != token_number {
+			var err parserError_t
+			err.msg = fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, tok.getTokenName())
+			errors <- err
+			success = false
+			continue
+		}
+
+		//This IS a number
+		lineStart = len(program)
+		program = append(program, toks[0], toks[1])
+		pos := 2
+
+		for {
+			tok = token(toks[pos])
+			pos++
+			switch tok {
+
+			//Unexpected newline
+			case token_newline:
+				var err parserError_t
+				err.msg = fmt.Sprintf("Line %d: Unexpected end of line.", linecount)
+				break
+
+			//Lefthand chaining
+			case token_chainPlus, token_chainMinus:
+
+				//Read new token
+				next := token(toks[pos])
+				pos++
+				if next != token_number {
+					var err parserError_t
+					err.msg = fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.getTokenName())
+					errors <- err
+					success = false
+					break
+				}
+
+				//Push operand and number into program
+				program = append(program, float64(tok), toks[pos])
+				pos++
+				continue
+
+			//No righthand required
+			case token_decrement, token_increment, token_printChar, token_printNumber, token_readInput:
+
+				//Read next token
+				next := token(toks[pos])
+				pos++
+				if next != token_newline {
+					var err parserError_t
+					err.msg = fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.getTokenName())
+					errors <- err
+					success = false
+				}
+				break
+
+			//Righthand required
+			case token_assign, token_add, token_sub, token_multiply, token_divide:
+
+				//Read next token
+				next := token(toks[pos])
+				pos++
+				if next != token_number {
+					var err parserError_t
+					err.msg = fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.getTokenName())
+					errors <- err
+					success = false
+					break
+				}
+				num := toks[pos]
+				pos++
+
+				//Expect newline
+				next = token(toks[pos])
+				pos++
+				if next != token_newline {
+					var err parserError_t
+					err.msg = fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.getTokenName())
+					errors <- err
+					success = false
+					break
+				}
+
+				//Push operand and number into program
+				program = append(program, float64(tok), num)
+				pos++
+
+			//Expect righthand AND start bracket
+			case token_equals, token_different, token_greaterThan, token_greaterEquals, token_lessThan, token_lessEquals:
+
+				//Read next token
+				next := token(toks[pos])
+				pos++
+				if next != token_number {
+					var err parserError_t
+					err.msg = fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.getTokenName())
+					errors <- err
+					success = false
+					break
+				}
+				num := toks[pos]
+				pos++
+
+				//Expect start bracket
+				next = token(toks[pos])
+				pos++
+				if next != token_curlyStart && next != token_curlyEnd {
+
+					//Is it a newline?
+					if next == token_newline {
+						//All is good
+						expectBracket = true
+					} else {
+						var err parserError_t
+						err.msg = fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.getTokenName())
+						errors <- err
+						success = false
+						break
+					}
+				}
+
+				//Push operand and number into program
+				program = append(program, float64(tok), num, 0)
+				pos++
+
+				//Push current context according to bracket type
+				if next == token_curlyStart {
+					curlies = append(curlies, programContext{
+						jumplinepos:         lineStart,
+						jumplinedestination: len(program) - 1,
+					})
+				} else if next == token_squareStart {
+					squares = append(squares, programContext{
+						jumplinepos:         lineStart,
+						jumplinedestination: len(program) - 1,
+					})
+				}
+			}
+		}
+
+		continue
+	}
+
+	return program, success
 }
 
 //Grab number
@@ -307,6 +545,8 @@ func readWord(text string, pos *int) (string, bool) {
 			switch char = getNextChar(text, pos); char {
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '.':
 				output += string(char)
+			case 0:
+				return output, false
 			default:
 				*pos--
 				return output, false
@@ -318,7 +558,9 @@ func readWord(text string, pos *int) (string, bool) {
 		for {
 			switch char = getNextChar(text, pos); char {
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '.', 0, ' ', '\t', 0x0D, '\n':
-				*pos--
+				if char != 0 {
+					*pos--
+				}
 				return output, false
 			default:
 				output += string(char)

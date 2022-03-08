@@ -33,7 +33,7 @@ var outputFile *os.File = nil
 func main() {
 
 	//Uncomment only for debugging
-	os.Args = []string{os.Args[0], "example programs/echo.nms"}
+	os.Args = []string{os.Args[0], "example programs/brainfrick.nms"}
 
 	//No arguments provided
 	fmt.Println()
