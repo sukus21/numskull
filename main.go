@@ -14,10 +14,8 @@ const (
 	usage_c string = "-c, --console         Force program output to console"
 )
 
-var program []byte
-var readPos int
+var program []float64
 var memory map[float64]float64 = make(map[float64]float64)
-
 var input []float64
 var inputPos int
 
@@ -31,7 +29,7 @@ var outputFile *os.File = nil
 func main() {
 
 	//Uncomment only for debugging
-	os.Args = []string{os.Args[0], "example programs/brainfrick.nms"}
+	//os.Args = []string{os.Args[0], "example programs/echo.nms"}
 
 	//No arguments provided
 	fmt.Println()
@@ -224,7 +222,6 @@ func main() {
 		fmt.Println(err.Error())
 		closeProgram(1)
 	}
-	program = file
 
 	//Read input file
 	if readFromFile {
@@ -297,7 +294,7 @@ func main() {
 				}
 
 				//Convert to number
-				number, err := utils.BytesliceToNumber(numData)
+				number, err := BytesliceToNumber(numData)
 				if err != nil {
 					fmt.Println("Error when converting input file")
 					fmt.Println(err.Error())
@@ -327,8 +324,12 @@ func main() {
 	}
 
 	//Start executing it
-	parser.ParseProgram(string(program))
-	err = runProgram()
+
+	success := true
+	program, success = ParseProgram(string(file))
+	if success {
+		err = runProgram(program)
+	}
 
 	//Handle program output
 	fmt.Println()
@@ -364,7 +365,167 @@ func memoryRead(pos float64) float64 {
 }
 
 //Main program function
-func runProgram() error {
+func runProgram(program []float64) error {
+
+	for readPos := 0; readPos < len(program); {
+
+		tok := token(program[readPos])
+		readPos++
+
+		//Looping bracket?
+		if tok == token_squareEnd {
+
+			//Read jump point and jump
+			readPos = int(program[readPos])
+			continue
+		}
+
+		//It's a number
+		lefthand := program[readPos]
+		readPos++
+
+		//Start chaining lefthands
+		for {
+
+			//Make sure this is a chainer
+			tok = token(program[readPos])
+			readPos++
+			if tok != token_chainMinus && tok != token_chainPlus {
+				break
+			}
+			readPos++
+
+			//Chain lefthand
+			if tok == token_chainMinus {
+				lefthand -= memoryRead(program[readPos])
+			} else {
+				lefthand += memoryRead(program[readPos])
+			}
+			readPos++
+		}
+
+		//We got us an operation
+		switch tok {
+		case token_increment:
+			memory[lefthand] = memoryRead(lefthand) + 1
+		case token_decrement:
+			memory[lefthand] = memoryRead(lefthand) - 1
+
+		case token_assign:
+			readPos++
+			righthand := program[readPos]
+			readPos++
+			memory[lefthand] = memoryRead(righthand)
+		case token_add:
+			readPos++
+			righthand := program[readPos]
+			readPos++
+			memory[lefthand] = memoryRead(lefthand) + memoryRead(righthand)
+		case token_sub:
+			readPos++
+			righthand := program[readPos]
+			readPos++
+			memory[lefthand] = memoryRead(lefthand) - memoryRead(righthand)
+		case token_multiply:
+			readPos++
+			righthand := program[readPos]
+			readPos++
+			memory[lefthand] = memoryRead(lefthand) * memoryRead(righthand)
+		case token_divide:
+			readPos++
+			righthand := program[readPos]
+			readPos++
+			memory[lefthand] = memoryRead(lefthand) / memoryRead(righthand)
+
+		case token_printChar:
+			if consoleOutput {
+				fmt.Print(string(byte(memoryRead(lefthand))))
+			}
+			if writeToFile {
+				outputFile.Write([]byte{(byte(memoryRead(lefthand)))})
+			}
+		case token_printNumber:
+			if consoleOutput {
+				fmt.Print(memoryRead(lefthand))
+			}
+			if writeToFile {
+				outputFile.WriteString(fmt.Sprint(memoryRead(lefthand)))
+			}
+		case token_readInput:
+			//Read value
+			val, err := getInput()
+			if err != nil {
+				return err
+			}
+
+			//Assign it to memory
+			memory[lefthand] = val
+
+		case token_equals:
+			readPos++
+			righthand := memoryRead(program[readPos])
+			readPos++
+			if memoryRead(lefthand) == righthand {
+				readPos++
+			} else {
+				//Jump
+				readPos = int(program[readPos])
+			}
+		case token_different:
+			readPos++
+			righthand := memoryRead(program[readPos])
+			readPos++
+			if memoryRead(lefthand) != righthand {
+				readPos++
+			} else {
+				//Jump
+				readPos = int(program[readPos])
+			}
+		case token_lessThan:
+			readPos++
+			righthand := memoryRead(program[readPos])
+			readPos++
+			if memoryRead(lefthand) < righthand {
+				readPos++
+			} else {
+				//Jump
+				readPos = int(program[readPos])
+			}
+		case token_lessEquals:
+			readPos++
+			righthand := memoryRead(program[readPos])
+			readPos++
+			if memoryRead(lefthand) <= righthand {
+				readPos++
+			} else {
+				//Jump
+				readPos = int(program[readPos])
+			}
+		case token_greaterThan:
+			readPos++
+			righthand := memoryRead(program[readPos])
+			readPos++
+			if memoryRead(lefthand) > righthand {
+				readPos++
+			} else {
+				//Jump
+				readPos = int(program[readPos])
+			}
+		case token_greaterEquals:
+			readPos++
+			righthand := memoryRead(program[readPos])
+			readPos++
+			if memoryRead(lefthand) >= righthand {
+				readPos++
+			} else {
+				//Jump
+				readPos = int(program[readPos])
+			}
+
+		default:
+			fmt.Print("Uh oh, something went fucky :(")
+		}
+	}
 
 	//Everything worked out
 	return nil
@@ -406,7 +567,7 @@ func getInput() (float64, error) {
 		}
 
 		//Convert this to float64 and return
-		return utils.BytesliceToNumber([]byte(str))
+		return BytesliceToNumber([]byte(str))
 	}
 }
 
