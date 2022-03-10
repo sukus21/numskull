@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"numskull/parser"
-	"numskull/utils"
 	"os"
 )
 
