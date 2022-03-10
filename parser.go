@@ -1,8 +1,7 @@
-package parser
+package main
 
 import (
 	"fmt"
-	"numskull/utils"
 )
 
 const (
@@ -113,26 +112,18 @@ type programContext struct {
 }
 
 //Preprocess program
-func ParseProgram(raw string) []float64 {
+func ParseProgram(raw string) ([]float64, bool) {
 
-	//Variables
+	//Different channels I need
 	lines := make(chan string)
 	tokens := make(chan []float64)
 	errors := make(chan error)
 
 	//Actually preprocess program
+	go logErrors(errors)
 	go programSeperate(raw, lines, errors)
 	go tokenizeLines(lines, tokens, errors)
-
-	program, success := validateTokens(tokens, errors)
-
-	//Check success state
-	if !success {
-		fmt.Println("uh oh, something went wrong :(")
-	}
-
-	//Return program
-	return program
+	return validateTokens(tokens, errors)
 }
 
 //Seperate program per line
@@ -157,6 +148,13 @@ func programSeperate(program string, lines chan<- string, errors chan<- error) {
 			//Was this a comment?
 			if char == '/' {
 				currentLine = currentLine[:len(currentLine)-1]
+
+				//Skip to next newline
+				for char != '\n' {
+					char = program[i]
+					i++
+				}
+				i--
 			}
 
 			//Push line into output channel
@@ -202,24 +200,24 @@ func tokenizeLines(lines <-chan string, tokens chan<- []float64, errors chan<- e
 
 			//Newline, end of current line
 			if tok == token_newline {
-				//fmt.Println()
 				break
 			}
 
 			//Was this a number?
 			if tok == token_number {
 				line = append(line, num)
-				//fmt.Print(num, " ")
-			} else {
-				//fmt.Print(tok.getTokenName(), " ")
 			}
 		}
 
 		//Send this slice through channel
 		tokens <- line
 	}
+
+	//Alright, we done
+	close(tokens)
 }
 
+//Make sure this stuff is valid code, and construct finished program
 func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bool) {
 
 	//Finished program
@@ -310,7 +308,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 		program = append(program, toks[0], toks[1])
 		pos := 2
 
-		for {
+		for stayIn := true; stayIn; {
 			tok = token(toks[pos])
 			pos++
 			switch tok {
@@ -319,7 +317,9 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 			case token_newline:
 				var err parserError_t
 				err.msg = fmt.Sprintf("Line %d: Unexpected end of line.", linecount)
-				break
+				errors <- err
+				stayIn = false
+				success = false
 
 			//Lefthand chaining
 			case token_chainPlus, token_chainMinus:
@@ -332,11 +332,12 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 					err.msg = fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.getTokenName())
 					errors <- err
 					success = false
+					stayIn = false
 					break
 				}
 
 				//Push operand and number into program
-				program = append(program, float64(tok), toks[pos])
+				program = append(program, float64(tok), float64(token_number), toks[pos])
 				pos++
 				continue
 
@@ -344,22 +345,31 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 			case token_decrement, token_increment, token_printChar, token_printNumber, token_readInput:
 
 				//Read next token
+				stayIn = false
 				next := token(toks[pos])
 				pos++
+
+				//Was this not a newline?
 				if next != token_newline {
 					var err parserError_t
 					err.msg = fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.getTokenName())
 					errors <- err
 					success = false
+					break
 				}
-				break
+
+				//Write token
+				program = append(program, float64(tok))
 
 			//Righthand required
 			case token_assign, token_add, token_sub, token_multiply, token_divide:
 
 				//Read next token
+				stayIn = false
 				next := token(toks[pos])
 				pos++
+
+				//Expect number
 				if next != token_number {
 					var err parserError_t
 					err.msg = fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.getTokenName())
@@ -382,15 +392,18 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 				}
 
 				//Push operand and number into program
-				program = append(program, float64(tok), num)
+				program = append(program, float64(tok), float64(token_number), num)
 				pos++
 
 			//Expect righthand AND start bracket
 			case token_equals, token_different, token_greaterThan, token_greaterEquals, token_lessThan, token_lessEquals:
 
 				//Read next token
+				stayIn = false
 				next := token(toks[pos])
 				pos++
+
+				//Expect number
 				if next != token_number {
 					var err parserError_t
 					err.msg = fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.getTokenName())
@@ -404,12 +417,13 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 				//Expect start bracket
 				next = token(toks[pos])
 				pos++
-				if next != token_curlyStart && next != token_curlyEnd {
+				if next != token_curlyStart && next != token_squareStart {
 
 					//Is it a newline?
 					if next == token_newline {
 						//All is good
 						expectBracket = true
+						lastLine = linecount
 					} else {
 						var err parserError_t
 						err.msg = fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.getTokenName())
@@ -420,7 +434,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 				}
 
 				//Push operand and number into program
-				program = append(program, float64(tok), num, 0)
+				program = append(program, float64(tok), float64(token_number), num, 0)
 				pos++
 
 				//Push current context according to bracket type
@@ -435,13 +449,28 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 						jumplinedestination: len(program) - 1,
 					})
 				}
+
+			//What on earth did you send me?
+			default:
+				stayIn = false
+				var err parserError_t
+				err.msg = fmt.Sprintf("Line %d: Unexpected %s found, expected operation.", linecount, tok.getTokenName())
+				success = false
+				errors <- err
 			}
 		}
-
-		continue
 	}
 
+	//We done :)
+	close(errors)
 	return program, success
+}
+
+//Yup
+func logErrors(errors <-chan error) {
+	for err := range errors {
+		fmt.Println(err.Error())
+	}
 }
 
 //Grab number
@@ -454,7 +483,7 @@ func readToken(text string, pos *int) (token, float64, error) {
 	}
 
 	//Is this a number?
-	num, err := utils.BytesliceToNumber([]byte(word))
+	num, err := BytesliceToNumber([]byte(word))
 	if err == nil {
 
 		//Yes it is!
@@ -524,6 +553,7 @@ func readToken(text string, pos *int) (token, float64, error) {
 	}
 }
 
+//Um
 func readWord(text string, pos *int) (string, bool) {
 	char := getNextNonWhitespace(text, pos)
 	if char == 0 {
