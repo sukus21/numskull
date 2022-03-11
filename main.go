@@ -324,24 +324,23 @@ func main() {
 	}
 
 	//Start executing it
-
 	success := true
 	program, success = ParseProgram(string(file))
 	if success {
+
+		//Run program
 		err = runProgram(program)
-	}
 
-	//Handle program output
-	fmt.Println()
-	fmt.Println()
-	if err != nil {
-
-		//Print error
-		fmt.Println(err.Error())
-	} else {
-
-		//Program finished :)
-		fmt.Println("Program finished :)")
+		//Handle program output
+		fmt.Println()
+		fmt.Println()
+		if err != nil {
+			//Print error
+			fmt.Println(err.Error())
+		} else {
+			//Program finished :)
+			fmt.Println("Program finished :)")
+		}
 	}
 
 	//Close file maybe
