@@ -1,0 +1,152 @@
+// BRAINFRICK.NMS:
+// A barebones brainf**k interpreter, with a few limitations:
+// - It works best with an input file in binary read mode (commandline argument -i). 
+// - It does not support reading or writing past slot 29999 or before slot 0, and doing so will result in unintended behaviour. 
+// - Cells can be of negative value, and can go past 255. 
+// - The , command always returns 0.
+
+
+
+//Set up memory and program pointers
+1 = 100    //Memory pointer, 30000 entries
+2 = 30000  //Program offset, unknown entries
+2 += 1     //Make sure they don't overlap
+0+2 = -1   //Set first program slot to -1
+2++
+
+//Clear memory
+3 = 0          //Set 3 to 0
+0+1+3 ?! -1 [  //Repeat until we reach the -1
+    0+1+3 = 0  //Set memory to 0
+    3++        //Move to next slot
+]
+
+//Load in brainf**k program
+3 = 0
+4 ?! -1 [      //Was last byte read -1 (end of file)?
+    4"         //Read input byte
+    0+2+3 = 4  //Store program byte
+    3++        //Move to next slot
+]
+
+//Important variables
+5 = 0  //Program count
+9 = 0  //Program count backup
+6 = 0  //Memory pointer
+7 = 0  //Main loop control flag
+
+//Main loop
+7 ?= 0 [
+
+    //Save old program count
+    9 = 5
+
+    //The + instruction
+    0+2+5 ?= 43 {
+        0+1+6++
+    }
+
+    //The - instruction
+    0+2+5 ?= 45 {
+        0+1+6--
+    }
+
+    //The < instruction
+    0+2+5 ?= 60 {
+        6--
+    }
+
+    //The > instruction
+    0+2+5 ?= 62 {
+        6++
+    }
+
+    //The . instruction
+    0+2+5 ?= 46 {
+        0+1+6#
+    }
+
+    //The , instruction
+    //Does not work, always returns 0
+    0+2+5 ?= 44 {
+        0+1+6 = 0
+    }
+
+    //The [ instruction
+    0+2+5 ?= 91 {
+
+        //Should we branch?
+        0+1+6 ?= 0 {
+
+            3 = 0  //Depth counter
+            8 = 0  //Loop toggle
+            8 ?= 0 [
+
+                //Is this the end of the program?
+                0+2+9 ?= -1 {
+                    7 = -1  //Stop program
+                    8 = -1  //Stop loop
+                }
+
+                //Increase depth count
+                0+2+9 ?= 91 {
+                    3++
+                }
+
+                //Decrease depth count
+                0+2+9 ?= 93 {
+                    3--
+                }
+
+                //Is depth count 0?
+                3 ?= 0 {
+                    8 = -1  //Stop loop
+                }
+                9++  //Change backup program counter
+            ]
+        }
+    }
+
+    //The ] instruction
+    0+2+5 ?= 93 {
+
+        //Should we branch?
+        0+1+6 ?! 0 {
+            3 = 0  //Depth counter
+            8 = 0  //Loop toggle
+            8 ?= 0 [
+
+                //Are we at the end of the program?
+                0+2+9 ?= -1 {
+                    7 = -1
+                    8 = -1
+                }
+
+                //Increase depth
+                0+2+9 ?= 93 {
+                    3++
+                }
+                
+                //Decrease depth
+                0+2+9 ?= 91 {
+                    3--
+                }
+
+                //Is depth 0?
+                3 ?= 0 {
+                    8 = -1  //Stop loop
+                }
+                9--  //Change backup program counter
+            ]
+        }
+    }
+    
+    //Restore program counter
+    5 = 9
+    5++
+
+    //Is this the end of the program?
+    0+2+5 ?= -1 {
+        7 = -1
+    }
+]

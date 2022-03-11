@@ -1,0 +1,13 @@
+// ECHO.NMS:
+// A simple program that reads input, then outputs it again.
+// Values are seperated by spaces.
+// Values will continue to be read until a -1 is found.
+// When that happens, the program terminates.
+
+
+
+1"         //Read initial input
+1 ?! -1 [  //Repeat as long as input keeps coming
+    1#     //Print input as ascii
+    1"     //Read new input
+]

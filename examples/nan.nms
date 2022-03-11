@@ -1,0 +1,21 @@
+// NAN.NMS:
+// A program to demonstrate how to create NaN.
+// Using NaN should generally be avoided,
+// as it may be patched out in a later language revision.
+
+
+
+//Create NaN value in 0
+0 /= 0  //Divide by 0 error, 0 now contains NaN
+0!      //Print value of 0 (NaN)
+10#     //Print newline
+
+//Try to write a value to NaN
+0+0 = 9  //Try to write 9 to NaN
+0+0!     //Output is still NaN
+10#     //Print newline
+
+//Restore 0 to original state
+0 = 1
+0--
+0!
