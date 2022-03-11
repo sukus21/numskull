@@ -1,24 +1,24 @@
 # Numskull language specification
- `numskull version 1.0`
+ `numskull version 1.1`
 
 ## History
  The idea for Numskull was concieved the 11th of February 2022.
- <br>
- The idea was to make a programming language, where numbers could be equal to other numbers. The first version of the interpreter `(v0.1.0)` was written in GO over that same weekend `(feb. 11-13 2022)`. Language features, language syntax and interpreter functionality was all decided while writing the interpreter.
+ 
+ The idea was to make a programming language, where numbers weren't constant, but mutable. The first version of the interpreter was written over that same weekend `(feb. 11-13 2022)`. Language features and syntax was decided as I was implementing them, and were not planned out from the start.
 
 ## General information
- In this language there are no variables, and letters are forbidden. Only numbers and symbols are allowed. The language's gimmick is the ability to assign a number to be equal to another number. This means that all numbers are variables, containing themselves by default. This means all integer numbers, negative numbers, decimal numbers and decimal negative numbers can store values and are valid values to be stored. All values (and keys) are represented by a 64-bit float. The language only supports real numbers, no NaN's, infinities or others.
- <br>
- There is currently no way to write comments in programs.
+ In this language there are no variables, and letters are forbidden. Only numbers and symbols are allowed. The language's gimmick is the ability to assign a number to be equal to another number. This means that all numbers are variables, containing themselves by default. This means all integer numbers, negative numbers, decimal numbers and decimal negative numbers can store values and are valid values to be stored. 
+ 
+ All values (and keys) are represented by a 64-bit float. The language only supports real numbers as input, but NaN's and infinities can be created during runtime. However, this is strongly discouraged, unless you know what you're doing.
 
 
 
 ## Instructions
  Numskull programs are made up of individual instructions. Each line of code contains one instructions, and required newlines between them. An instruction is structured like this: 
- <br>
+ 
  `<lefthand> <operation> [righthand] [bracket]`
 
- Both lefthand and righthand are numbers, but righthand isn't required for all operations, and brackets are only a necessity for the comparison operator. Below are examples of instructions.
+ Both lefthand and righthand are numbers, but righthand isn't required for all operations, and brackets are only a necessity for the comparison operator. Below are examples of instructions:
  ```
  Assign a value:             10 = 60
  Decrement a value:          -5++
@@ -98,77 +98,86 @@
  
  A comparison operator requires an opening bracket after the righthand operator. The bracket should be on the same line as the instruction, but it is not required. If a condition isn't met, the program skips ahead to the next closing bracket, and continues execution from there. In that way, the comparison operator acts like an equivelant to the `if`-statement in C. Closing brackets should always be on their own line, separate from any instructions.
  
- Below are two example programs and their outputs, to hopefully demonstrate how the comparison instruction works.
+ Below are two example programs and their outputs, to hopefully demonstrate how the comparison instruction works:
  ```c
-  __________________     __________________
- | Program one:     |   | Program two:     |
- |__________________|   |__________________|
- |                  |   |                  |
- | 10 ?! 0 {        |   | 10 ?< 5 {        |
- |     10 = 60      |   |     10 = 40      |
- |     10!          |   |     10!          |
- |     10!          |   |     10!          |
- |     10!          |   |     10!          |
- | }                |   | }                |
- | 20!              |   | 20!              |
- |__________________|   |__________________|
- | Output:          |   | Output:          |
- | 606060           |   | 20               |
- |__________________|   |__________________|
+ //Example program 1
+ 10 ?= 0 {    //Is 10 equal to 0?
+     10 = 60  //Set 10 to 60
+     10!      //Print value of 10
+     10!
+     10!
+ }            //End of if-statement
+ 20!          //Print value of 20
+ ```
+ Output:
+ ```
+ 606060
+ ```
+ ```c
+ //Example program 2
+ 10 ?< 5 {    //Is 10 below 5?
+     10 = 40  //Set 10 to 40
+     10!      //Print value of 10
+     10!
+     10!
+ }            //End of if-statement
+ 20!          //Print value of 20
+ ```
+ Output:
+ ```
+ 20
  ```
  Loops can be constructed using the comparison operator instead, by simple using square brackets `[]` instead of curly brackets `{}`. When a closing square bracket is encountered ( `]` ), the program skips back up to the matching opening brackets condition statement, and continues from there. If the condition is still true, the loop is run again. Otherwise the program skips to the closing bracket and continues from there. Using curly brackets to open and curly brackets to close (or the other way around) is not permitted.
 
- Below is an example program and its output, to demonstrate how a loop works.
+ Below is an example program and its output, to demonstrate how a loop works:
  ```c
-  __________________
- | Example program: |
- |__________________|
- |                  |
- | 1 = 10           |
- | 1 ?> 5 [         |
- |     1!           |
- |     32#          |
- |     1--          |
- | ]                |
- |__________________|
- | Output:          |
- | 10 9 8 7 6       |
- |__________________|
+ 1 = 10     //Set 1 to 10
+ 1 ?> 5 [   //Is 1 greater than 5?
+     1!     //Print contents of 1
+     32#    //Print a space
+     1--    //Decrement 1
+ ]
+ ```
+ Output:
+ ```
+ 10 9 8 7 6
  ```
 
 
 ## Lefthand chaining
  The lefthand operator supports chaining using the `+` and `-` signs, but the way this works might not be obvious. 
  
- The leftmost value is the base, and is read as an immediate value, aka the number itself, not the value within. Every link in the chain thereafter is not immediate, and the value added or subtracted will instead be the value of said number. Whitespace between each link and number is optional. Lefthand chaining is available for all operation types. The righthand cannot be chained, and must always be just one number.
- <br>
+ The leftmost value is the base, and is read as an immediate value, and not the value contained in it. Every link in the chain thereafter is not immediate, and the value added or subtracted will instead be the value of said number. Therefore it can be useful to keep 0 free, and use that as a base, if you don't care for a base offset.
+ 
  `<base> [+/- offset] [+/- offset]...`
 
  It is easier to illustrate using examples:
- - `5+8+6` sets the lefthand to be equal to `5` plus the value of `8` plus the value of `6`.
+ - `5+8+6` sets the lefthand to be equal to 5 plus the value of 8 plus the value of 6.
 
- - `5.5 - -7` sets the lefthand to be equal to `5.5` minus the value of `-7`.
+ - `5.5 - -7` sets the lefthand to be equal to 5.5 minus the value of -7. (Important: When chaining by subtraction, whitespace is always reqired between the chain operator and the number itself.)
 
 
- Below is an example program to better explain lefthand chaining.
+ Below is an example program to better explain lefthand chaining:
  ```c
-  __________________
- | Example program: |
- |__________________|
- |                  |
- | 1 = 10           |
- | 6+1!             |
- | 32#              |
- | 6+1+7!           |
- |__________________|
- | Output:          |
- | 16 23            |
- |__________________|
+ 1 = 10  //Set 1 to 10
+ 6+1!    //Print value at (6+10) = 16 (1 contains 10)
+ 32#     //Print space
+ 6+1+7!  //Print number at (6+10+7) = 23
  ```
+ Output:
+ ```
+ 16 23
+ ```
+
+ The righthand cannot be chained, and must always be just one number.
+
+## Other language features
+ - As of version 1.1, Numskull supports code comments. A comment can be started using `//`, and anything that comes after it on the same line will be ignored.
+
 
 ## More information
  The interpreter is commandline based, and will likely remain so.
- For more information on how it works and what options are available, run the interpreter from the commandline with `--help`.
+ For more information on how it works and what options are available, run the interpreter from the commandline with `--help`, or check the [usage document](http://github.com/sukus21/numskull).
  
  ---
  

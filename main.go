@@ -14,6 +14,11 @@ const (
 	usage_c string = "-c, --console         Force program output to console"
 )
 
+const (
+	version_interpreter string = "v0.2.0"
+	version_language    string = "1.1"
+)
+
 var program []float64
 var memory map[float64]float64 = make(map[float64]float64)
 var input []float64
@@ -29,7 +34,11 @@ var outputFile *os.File = nil
 func main() {
 
 	//Uncomment only for debugging
-	//os.Args = []string{os.Args[0], "example programs/echo.nms"}
+	/*os.Args = []string{
+		os.Args[0],
+		"--input", "hello.bf",
+		"examples/brainfrick.nms",
+	}*/
 
 	//No arguments provided
 	fmt.Println()
@@ -139,8 +148,8 @@ func main() {
 
 		//Print numskull version
 		case "-v", "-V", "--version":
-			fmt.Println("Numskull interpreter v0.1.0")
-			fmt.Println("runs Numskull version 1.0")
+			fmt.Println("Numskull interpreter", version_interpreter)
+			fmt.Println("runs Numskull version", version_language)
 			somethingDone = true
 
 		//Force console output
