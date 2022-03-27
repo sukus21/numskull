@@ -172,7 +172,9 @@
  The righthand cannot be chained, and must always be just one number.
 
 ## Other language features
- - As of version 1.1, Numskull supports code comments. A comment can be started using `//`, and anything that comes after it on the same line will be ignored.
+ - As of version 1.1, Numskull supports code comments. A comment can be started using `//`, and anything that comes after it on the same line will be ignored. The same version also supports multiline comments. These are started with `/*` and terminated with `*/`. Anything between the two will be ignored.
+
+ - The interpreter does not care if brackets are opened and closed in pairs. This means you could use brackets in the following order: `{ [ } ]`. If the first `{` is taken, it jumps to the `}`, inside the body of the `[ ]`, and execution continues as normal from there, and when the `]` is encountered, the condition at the `[` is evaluated as normal. The same technique could be used to exit the body of the `[ ]` early.
 
 
 ## More information
