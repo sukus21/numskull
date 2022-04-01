@@ -172,6 +172,14 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 	linecount := 0
 	lineStart := -1
 
+	//Easy error function
+	e := func(s string) {
+		var err parserError_t
+		err.msg = s
+		errors <- err
+		success = false
+	}
+
 	for toks := range Tokens {
 		linecount++
 
@@ -185,10 +193,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 		if expectBracket {
 			expectBracket = false
 			if tok != token.CurlyStart && tok != token.SquareStart {
-				var err parserError_t
-				err.msg = fmt.Sprintf("Line %d-%d: Expected starting bracket, got %s.\n", lastLine, linecount, tok.GetTokenName())
-				errors <- err
-				success = false
+				e(fmt.Sprintf("Line %d-%d: Expected starting bracket, got %s.\n", lastLine, linecount, tok.GetTokenName()))
 				continue
 			}
 		}
@@ -199,10 +204,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 			//Expect newline
 			if len(toks) > 2 || next != token.Newline {
-				var err parserError_t
-				err.msg = fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName())
-				errors <- err
-				success = false
+				e(fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName()))
 				continue
 			}
 
@@ -216,10 +218,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 			//Check if stack is empty
 			if len(*cnts) == 0 {
-				var err parserError_t
-				err.msg = fmt.Sprintf("Line %d: Unmatched }.\n", linecount)
-				errors <- err
-				success = false
+				e(fmt.Sprintf("Line %d: Unmatched }.\n", linecount))
 				continue
 			}
 
@@ -237,10 +236,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 		//Then this should be a number
 		if tok != token.Number {
-			var err parserError_t
-			err.msg = fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, tok.GetTokenName())
-			errors <- err
-			success = false
+			e(fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, tok.GetTokenName()))
 			continue
 		}
 
@@ -256,11 +252,8 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 			//Unexpected newline
 			case token.Newline:
-				var err parserError_t
-				err.msg = fmt.Sprintf("Line %d: Unexpected end of line.", linecount)
-				errors <- err
+				e(fmt.Sprintf("Line %d: Unexpected end of line.", linecount))
 				stayIn = false
-				success = false
 
 			//Lefthand chaining
 			case token.ChainPlus, token.ChainMinus:
@@ -269,10 +262,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 				next := token.Token(toks[pos])
 				pos++
 				if next != token.Number {
-					var err parserError_t
-					err.msg = fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.GetTokenName())
-					errors <- err
-					success = false
+					e(fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.GetTokenName()))
 					stayIn = false
 					break
 				}
@@ -292,10 +282,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 				//Was this not a newline?
 				if next != token.Newline {
-					var err parserError_t
-					err.msg = fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName())
-					errors <- err
-					success = false
+					e(fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName()))
 					break
 				}
 
@@ -312,10 +299,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 				//Expect number
 				if next != token.Number {
-					var err parserError_t
-					err.msg = fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.GetTokenName())
-					errors <- err
-					success = false
+					e(fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.GetTokenName()))
 					break
 				}
 				num := toks[pos]
@@ -325,10 +309,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 				next = token.Token(toks[pos])
 				pos++
 				if next != token.Newline {
-					var err parserError_t
-					err.msg = fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName())
-					errors <- err
-					success = false
+					e(fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName()))
 					break
 				}
 
@@ -346,10 +327,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 				//Expect number
 				if next != token.Number {
-					var err parserError_t
-					err.msg = fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.GetTokenName())
-					errors <- err
-					success = false
+					e(fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.GetTokenName()))
 					break
 				}
 				num := toks[pos]
@@ -366,10 +344,8 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 						expectBracket = true
 						lastLine = linecount
 					} else {
-						var err parserError_t
-						err.msg = fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName())
-						errors <- err
-						success = false
+						//Nope throw an error
+						e(fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName()))
 						break
 					}
 				}
@@ -393,11 +369,8 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 			//What on earth did you send me?
 			default:
+				e(fmt.Sprintf("Line %d: Unexpected %s found, expected operation.", linecount, tok.GetTokenName()))
 				stayIn = false
-				var err parserError_t
-				err.msg = fmt.Sprintf("Line %d: Unexpected %s found, expected operation.", linecount, tok.GetTokenName())
-				success = false
-				errors <- err
 			}
 		}
 	}
@@ -530,7 +503,7 @@ func readWord(text string, pos *int) (string, bool) {
 	default:
 		for {
 			switch char = getNextChar(text, pos); char {
-			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '.', 0, ' ', '\t', 0x0D, '\n':
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '.', 0, ' ', '\t', '\r', '\n':
 				if char != 0 {
 					*pos--
 				}
@@ -550,6 +523,7 @@ func getNextNonWhitespace(text string, pos *int) byte {
 		}
 	}
 
+	//Was nothing found?
 	return 0
 }
 
@@ -568,5 +542,5 @@ func getNextChar(text string, pos *int) byte {
 func isWhitespace(char byte) bool {
 
 	//Is the character any of the given values?
-	return char == ' ' || char == '\t' || char == '\n' || char == 0x0D
+	return char == ' ' || char == '\t' || char == '\n' || char == '\r'
 }

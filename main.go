@@ -40,8 +40,9 @@ func main() {
 	//Uncomment only for debugging
 	os.Args = []string{
 		os.Args[0],
-		//"--input", "hello.bf",
-		"examples/comments.nms",
+		"--input", "hello.bf",
+		"examples/brainfrick.nms",
+		//"examples/comments.nms",
 	}
 
 	//No arguments provided
