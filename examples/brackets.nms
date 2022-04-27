@@ -1,0 +1,23 @@
+// BRACKETS.NMS:
+// An example of how bracket mixing can be used.
+// The program counts down from 10, but stops when reaching 4.
+
+
+1 = 10
+1 ?= 1 [        //Loops forever
+    1!          
+    1 ?! 4 {    //Stay in condition
+        32#     
+        1--     //Decrement counter
+    ]           //Loop repeats here
+}               //If condition isn't met, program jumps to here
+
+//Write the word "end"
+10#
+96+5#
+96+14#
+96+4#
+
+//Write the escaped number
+32#
+1!
