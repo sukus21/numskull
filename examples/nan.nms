@@ -13,7 +13,7 @@
 //Try to write a value to NaN
 0+0 = 9  //Try to write 9 to NaN
 0+0!     //Output is still NaN
-10#     //Print newline
+10#      //Print newline
 
 //Restore 0 to original state
 0 = 1
