@@ -60,9 +60,14 @@ func programSeperate(program string, lines chan<- string, errors chan<- error) {
 				currentLine = currentLine[:len(currentLine)-1]
 
 				//Skip to next newline
-				for char != '\n' {
+				for char != '\n' && i < len(program) {
 					char = program[i]
 					i++
+				}
+
+				//No character was found
+				if i == len(program) {
+					char = 0
 				}
 				i--
 			}
