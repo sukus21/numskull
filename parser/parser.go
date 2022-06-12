@@ -177,7 +177,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 	linecount := 0
 	lineStart := -1
 
-	//Easy error function
+	//Easier error logging
 	e := func(s string) {
 		var err parserError_t
 		err.msg = s
@@ -385,14 +385,14 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 	return program, success
 }
 
-//Yup
+//Error logging function
 func logErrors(errors <-chan error) {
 	for err := range errors {
 		fmt.Println(err.Error())
 	}
 }
 
-//Grab number
+//Grab token
 func readToken(text string, pos *int, line int) (token.Token, float64, error) {
 
 	//Read a "word"
@@ -520,7 +520,7 @@ func readWord(text string, pos *int) (string, bool) {
 	}
 }
 
-//Get the next program character that ISN'T whitespace
+//Get the next non-whitespace program character
 func getNextNonWhitespace(text string, pos *int) byte {
 	for *pos < len(text) {
 		if val := getNextChar(text, pos); !isWhitespace(val) {
@@ -532,7 +532,7 @@ func getNextNonWhitespace(text string, pos *int) byte {
 	return 0
 }
 
-//Get the next character
+//Get the next program character
 func getNextChar(text string, pos *int) byte {
 	if *pos == len(text) {
 		return 0
