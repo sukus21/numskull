@@ -4,31 +4,31 @@ package token
 type Token float64
 
 const (
-	Invalid       Token = iota
-	Number        Token = iota
-	ChainPlus     Token = iota
-	ChainMinus    Token = iota
-	Assign        Token = iota
-	Add           Token = iota
-	Sub           Token = iota
-	Multiply      Token = iota
-	Divide        Token = iota
-	Increment     Token = iota
-	Decrement     Token = iota
-	PrintNumber   Token = iota
-	PrintChar     Token = iota
-	ReadInput     Token = iota
-	Equals        Token = iota
-	Different     Token = iota
-	LessThan      Token = iota
-	GreaterThan   Token = iota
-	LessEquals    Token = iota
-	GreaterEquals Token = iota
-	CurlyStart    Token = iota
-	CurlyEnd      Token = iota
-	SquareStart   Token = iota
-	SquareEnd     Token = iota
-	Newline       Token = iota
+	Invalid Token = iota
+	Number
+	ChainPlus
+	ChainMinus
+	Assign
+	Add
+	Sub
+	Multiply
+	Divide
+	Increment
+	Decrement
+	PrintNumber
+	PrintChar
+	ReadInput
+	Equals
+	Different
+	LessThan
+	GreaterThan
+	LessEquals
+	GreaterEquals
+	CurlyStart
+	CurlyEnd
+	SquareStart
+	SquareEnd
+	Newline
 )
 
 //Returns the name of the given token as a string

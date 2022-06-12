@@ -54,7 +54,7 @@ func main() {
 	if len(os.Args) == 1 {
 
 		printUsage()
-		closeProgram(1)
+		return
 	}
 
 	//Variables
@@ -75,7 +75,7 @@ func main() {
 				fmt.Println("Error: specify an argument to explain.")
 				fmt.Println("Example:", os.Args[0], os.Args[argPos-1], "v")
 				fmt.Println("Pass in no arguments to see list of available arguments.")
-				closeProgram(0)
+				return
 			}
 
 			switch os.Args[argPos] {
@@ -149,11 +149,11 @@ func main() {
 				fmt.Println("Error: unknown argument.")
 				fmt.Println()
 				printUsage()
-				closeProgram(1)
+				return
 			}
 
 			//Exit
-			closeProgram(0)
+			return
 
 		//Print numskull version
 		case "-v", "-V", "--version":
@@ -186,7 +186,7 @@ func main() {
 			if err != nil {
 				fmt.Println("Error creating output file")
 				fmt.Println(err.Error())
-				closeProgram(1)
+				return
 			}
 			consoleOutput = false
 			writeToFile = true
@@ -208,7 +208,7 @@ func main() {
 				fmt.Println("Error while opening input file")
 				fmt.Println(err.Error())
 				fmt.Println(usage_i)
-				closeProgram(1)
+				return
 			}
 
 			//Read thing
@@ -223,14 +223,14 @@ func main() {
 
 			fmt.Println("Error: Unknown argument: " + os.Args[argPos])
 			printUsage()
-			closeProgram(1)
+			return
 		}
 	}
 
 	//No more arguments? Was anything achieved?
 	finArg := os.Args[len(os.Args)-1]
 	if finArg[0] == '-' && somethingDone {
-		closeProgram(0)
+		return
 	}
 
 	//Try to read program file
@@ -238,7 +238,7 @@ func main() {
 	if err != nil {
 		fmt.Println("Error opening program file")
 		fmt.Println(err.Error())
-		closeProgram(1)
+		return
 	}
 
 	//Read input file
@@ -280,7 +280,7 @@ func main() {
 						if foundComma {
 							fmt.Println("Error converting number")
 							fmt.Println("Double commas on entry", len(input)+1, ".")
-							closeProgram(1)
+							return
 						}
 						foundComma = true
 						numData = append(numData, '.')
@@ -290,7 +290,7 @@ func main() {
 						if foundChar {
 							fmt.Println("Error converting number")
 							fmt.Println("Unexpected character encountered '", string(char), "' on entry", len(input)+1)
-							closeProgram(1)
+							return
 						}
 						foundChar = true
 						numData = append(numData, char)
@@ -307,7 +307,7 @@ func main() {
 					default:
 						fmt.Println("Error converting number")
 						fmt.Println("Unexpected character encountered '", string(char), "' on entry", len(input)+1)
-						closeProgram(1)
+						return
 					}
 				}
 
@@ -316,7 +316,7 @@ func main() {
 				if err != nil {
 					fmt.Println("Error when converting input file")
 					fmt.Println(err.Error())
-					closeProgram(1)
+					return
 				}
 				input = append(input, number)
 
@@ -587,14 +587,4 @@ func getInput() (float64, error) {
 		//Convert this to float64 and return
 		return utils.BytesliceToNumber([]byte(str))
 	}
-}
-
-//Close the program in a more elegant way.
-func closeProgram(state int) {
-	fmt.Println()
-	if !writeToFile {
-		fmt.Scan()
-	}
-
-	os.Exit(state)
 }
