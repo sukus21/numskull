@@ -9,7 +9,7 @@
 ## General information
  In this language there are no variables, and letters are forbidden. Only numbers and symbols are allowed. The language's gimmick is the ability to assign a number to be equal to another number. This means that all numbers are variables, containing themselves by default. This means all integer numbers, negative numbers, decimal numbers and decimal negative numbers can store values and are valid values to be stored. 
  
- All values (and keys) are represented by a 64-bit float. The language only supports real numbers as input, but NaN's and infinities can be created during runtime. However, this is strongly discouraged, unless you know what you're doing.
+ All values (and keys) are represented by a 64-bit float. The language only supports real numbers as input, but NaN and infinity values can be created during runtime (doing this is strongly discouraged, unless you know what you're doing).
 
 
 
@@ -39,13 +39,11 @@
 
  - ### `=`: Assign
     Assigns the value of lefthand to the value of the righthand.
-    <br>
-    *Example:* `44.2 = -7` sets `44.2` to be equal to the value of `-7`.
+    <br>*Example:* `44.2 = -7` sets `44.2` to be equal to the value of `-7`.
 
  - ### `+=`: Add
     Adds the value of the righthand to the value of the lefthand and stores the result in the lefthand.
-    <br>
-    *Example:* `5 += 2` adds the values of `5` and `2` together, and stores the result in `5`.
+    <br>*Example:* `5 += 2` adds the values of `5` and `2` together, and stores the result in `5`.
 
 
  - ### `-=`: Subtract
@@ -59,18 +57,15 @@
 
  - ### `!`: Print number
     Outputs the number stored in the lefthand as a string.
-    <br>
-    *Example:* `17!` will output the string "`17`".
+    <br>*Example:* `17!` will output the string "`17`".
 
  - ### `#`: Print character
     Outputs the number stored in the lefthand as a unicode character.
-    <br>
-    *Example:* `32#` will output a space character. Look up an ascii/unicode table for the characters you wish to print.
+    <br>*Example:* `32#` will output a space character. Look up an ascii/unicode table for the characters you wish to print.
 
  - ### `"`: Read input
     Reads a number from the input and stored it in the lefthand. The number read can be either from a file, either as binary or text, or can be input via the commandline.
-    <br>
-    *Example:* `-60"` reads a value and stores it in `-60`.
+    <br>*Example:* `-60"` reads a value and stores it in `-60`.
 
  - ### `?x`: Comparison
     Requires a bracket at the end of the instruction. Tests the value of the lefthand compared to the value of the righthand. If the condition is not met, the program jumps to the next closing bracket of matching type at the same level and continues executing from there. Further documented in the next chapter.
@@ -111,7 +106,7 @@
  ```
  Output:
  ```
- 606060
+ 60606020
  ```
  ```c
  //Example program 2
@@ -172,7 +167,7 @@
  The righthand cannot be chained, and must always be just one number.
 
 ## Other language features
- - As of version 1.1, Numskull supports code comments. A comment can be started using `//`, and anything that comes after it on the same line will be ignored. The same version also supports multiline comments. These are started with `/*` and terminated with `*/`. Anything between the two will be ignored.
+ - As of version 1.1, Numskull supports code comments. A comment can be started using `//`, and anything that comes after it on the same line will be ignored. Comments can also be multilined. These are started with `/*` and terminated with `*/`. Anything between the two will be ignored at runtime.
 
  - The interpreter does not care if brackets are opened and closed in pairs. This means you could use brackets in the following order: `{ [ } ]`. If the first `{` is taken, it jumps to the `}`, inside the body of the `[ ]`, and execution continues as normal from there, and when the `]` is encountered, the condition at the `[` is evaluated as normal. The same technique could be used to exit the body of the `[ ]` early.
 
