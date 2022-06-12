@@ -6,16 +6,6 @@ import (
 	"numskull/utils"
 )
 
-//Error things
-type parserError_t struct {
-	msg string
-}
-
-//Error message
-func (err parserError_t) Error() string {
-	return err.msg
-}
-
 type programContext struct {
 	jumplinepos         int
 	jumplinedestination int
@@ -179,9 +169,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 	//Easier error logging
 	e := func(s string) {
-		var err parserError_t
-		err.msg = s
-		errors <- err
+		errors <- fmt.Errorf(s)
 		success = false
 	}
 
@@ -468,9 +456,7 @@ func readToken(text string, pos *int, line int) (token.Token, float64, error) {
 
 	//Default
 	default:
-		return token.Invalid, 0, parserError_t{
-			fmt.Sprintf("Line %d: Unknown operation: \"%s\"", line, word),
-		}
+		return token.Invalid, 0, fmt.Errorf("line %d: unknown operation: '%s'", line, word)
 	}
 }
 

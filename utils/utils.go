@@ -1,42 +1,33 @@
 package utils
 
-import "strconv"
-
-type utilsError_t struct {
-	msg string
-}
-
-func (err utilsError_t) Error() string {
-	return err.msg
-}
+import (
+	"fmt"
+	"strconv"
+)
 
 //Converts a slice of bytes to a float64
 func BytesliceToNumber(numData []byte) (float64, error) {
-	var err utilsError_t
 
 	//Empty string
 	if len(numData) == 0 {
-		err.msg = "Number has no length."
-		return 0, err
+		return 0, fmt.Errorf("number has no length")
 	}
 
 	//Only a - sign
 	if len(numData) == 1 && numData[0] == '-' {
-		err.msg = "Invalid number, just a - sign."
-		return 0, err
+		return 0, fmt.Errorf("invalid number, just a - sign")
 	}
 
 	//Unclosed comma
 	lastChar := numData[len(numData)-1]
 	if lastChar == ',' || lastChar == '.' {
-		err.msg = "Comma with no value at the end"
-		return 0, err
+		return 0, fmt.Errorf("comma with no value at the end")
 	}
 
 	//Convert to number
-	number, errC := strconv.ParseFloat(string(numData), 64)
-	if errC != nil {
-		return 0, errC
+	number, err := strconv.ParseFloat(string(numData), 64)
+	if err != nil {
+		return 0, err
 	}
 
 	//Conversion succesful :)
