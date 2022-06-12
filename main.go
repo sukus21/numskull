@@ -9,6 +9,7 @@ import (
 	"numskull/utils"
 )
 
+//Usage strings
 const (
 	usage_v string = "-v, --version         Prints program version number"
 	usage_h string = "-h, --help <argument> Prints usage for given argument"
@@ -18,16 +19,19 @@ const (
 	usage_c string = "-c, --console         Force program output to console"
 )
 
+//Version numbers
 const (
 	version_interpreter string = "v0.2.0"
 	version_language    string = "1.1"
 )
 
+//Runtime variables
 var program []float64
 var memory map[float64]float64 = make(map[float64]float64)
 var input []float64
 var inputPos int
 
+//Settings
 var consoleOutput bool = true
 var readFromFile bool = false
 var inputBinary bool = true
@@ -556,11 +560,12 @@ func printUsage() {
 	fmt.Println("\t", usage_c)
 }
 
+//Get input from file or command line
 func getInput() (float64, error) {
 
 	if readFromFile {
 
-		//OOB read
+		//OOB read?
 		if inputPos >= len(input) {
 			return -1, nil
 		}
