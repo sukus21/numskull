@@ -164,8 +164,6 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 	squares := make([]programContext, 0, 64)
 
 	success := true
-	expectBracket := false
-	lastLine := 0
 	linecount := 0
 	lineStart := -1
 
@@ -185,13 +183,6 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 		//Expecting start bracket?
 		tok := token.Token(toks[0])
-		if expectBracket {
-			expectBracket = false
-			if tok != token.CurlyStart && tok != token.SquareStart {
-				e(fmt.Sprintf("Line %d-%d: Expected starting bracket, got %s.\n", lastLine, linecount, tok.GetTokenName()))
-				continue
-			}
-		}
 
 		//Is this an end bracket?
 		if tok == token.CurlyEnd || tok == token.SquareEnd {
@@ -333,16 +324,9 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 				pos++
 				if next != token.CurlyStart && next != token.SquareStart {
 
-					//Is it a newline?
-					if next == token.Newline {
-						//All is good
-						expectBracket = true
-						lastLine = linecount
-					} else {
-						//Nope throw an error
-						e(fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName()))
-						break
-					}
+					//Nope throw an error
+					e(fmt.Sprintf("Line %d: Expected start bracket, got '%s'", linecount, next.GetTokenName()))
+					break
 				}
 
 				//Push operand and number into program
