@@ -130,7 +130,7 @@ func TokenizeLines(lines <-chan string, tokens chan<- []float64, errors chan<- e
 			//Read Token
 			tok, num, err := readToken(msg, &pos, linecount)
 			if err != nil {
-				fmt.Println(err.Error())
+				fmt.Println(err)
 			}
 
 			//Add Token to slice
@@ -378,7 +378,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 //Error logging function
 func logErrors(errors <-chan error) {
 	for err := range errors {
-		fmt.Println(err.Error())
+		fmt.Println(err)
 	}
 }
 
