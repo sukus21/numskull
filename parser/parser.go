@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"fmt"
 	"numskull/token"
 	"numskull/utils"
@@ -21,21 +22,24 @@ func ParseProgram(raw string) ([]float64, bool) {
 
 	//Actually preprocess program
 	go logErrors(errors)
-	go programSeperate(raw, lines, errors)
+	go programSeperate(*bytes.NewBufferString(raw), lines, errors)
 	go TokenizeLines(lines, Tokens, errors)
 	return validateTokens(Tokens, errors)
 }
 
 //Seperate program per line
-func programSeperate(program string, lines chan<- string, errors chan<- error) {
+func programSeperate(program bytes.Buffer, lines chan<- string, errors chan<- error) {
 
 	currentLine := ""
-	var prevChar byte = 0
+	var prevChar rune = 0
 
 	//thing
-	for i := 0; i < len(program); i++ {
+	for char, _, err := program.ReadRune(); err == nil; char, _, err = program.ReadRune() {
 
-		char := program[i]
+		//Break
+		if err != nil {
+			break
+		}
 
 		//Ignore these
 		if char == '\r' {
@@ -50,16 +54,14 @@ func programSeperate(program string, lines chan<- string, errors chan<- error) {
 				currentLine = currentLine[:len(currentLine)-1]
 
 				//Skip to next newline
-				for char != '\n' && i < len(program) {
-					char = program[i]
-					i++
+				for char != '\n' && err == nil {
+					char, _, err = program.ReadRune()
 				}
 
 				//No character was found
-				if i == len(program) {
+				if err != nil {
 					char = 0
 				}
-				i--
 			}
 
 			//Multiline comment?
@@ -71,8 +73,8 @@ func programSeperate(program string, lines chan<- string, errors chan<- error) {
 
 				//Wait for comment closure
 				prevChar = 0
-				for i++; i < len(program); i++ {
-					char = program[i]
+				for err == nil {
+					char, _, err = program.ReadRune()
 
 					//End of comment?
 					if prevChar == '*' && char == '/' {
