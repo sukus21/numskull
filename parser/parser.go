@@ -17,14 +17,14 @@ func ParseProgram(raw string) ([]float64, bool) {
 
 	//Different channels I need
 	lines := make(chan string)
-	Tokens := make(chan []float64)
+	tokens := make(chan []float64)
 	errors := make(chan error)
 
 	//Actually preprocess program
 	go logErrors(errors)
 	go programSeperate(*bytes.NewBufferString(raw), lines, errors)
-	go TokenizeLines(lines, Tokens, errors)
-	return validateTokens(Tokens, errors)
+	go TokenizeLines(lines, tokens, errors)
+	return validateTokens(tokens, errors)
 }
 
 //Seperate program per line
@@ -117,7 +117,7 @@ func programSeperate(program bytes.Buffer, lines chan<- string, errors chan<- er
 }
 
 //Handle lines
-func TokenizeLines(lines <-chan string, Tokens chan<- []float64, errors chan<- error) {
+func TokenizeLines(lines <-chan string, tokens chan<- []float64, errors chan<- error) {
 
 	//Repeat for as long as there are lines
 	linecount := 0
@@ -148,15 +148,15 @@ func TokenizeLines(lines <-chan string, Tokens chan<- []float64, errors chan<- e
 		}
 
 		//Send this slice through channel
-		Tokens <- line
+		tokens <- line
 	}
 
 	//Alright, we done
-	close(Tokens)
+	close(tokens)
 }
 
 //Make sure this stuff is valid code, and construct finished program
-func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bool) {
+func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bool) {
 
 	//Finished program
 	program := make([]float64, 0, 1024)
@@ -175,7 +175,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 		success = false
 	}
 
-	for toks := range Tokens {
+	for toks := range tokens {
 		linecount++
 
 		//Is there anything on this line
