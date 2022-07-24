@@ -21,7 +21,7 @@ func BytesliceToNumber(numData []byte) (float64, error) {
 	//Unclosed comma
 	lastChar := numData[len(numData)-1]
 	if lastChar == ',' || lastChar == '.' {
-		return 0, fmt.Errorf("comma with no value at the end")
+		return 0, fmt.Errorf("expected fraction after decimal point")
 	}
 
 	//Convert to number
