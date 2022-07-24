@@ -21,8 +21,8 @@ const (
 
 //Version numbers
 const (
-	version_interpreter string = "v0.2.0"
-	version_language    string = "1.1"
+	version_interpreter string = "v0.2.1"
+	version_language    string = "1.1.1"
 )
 
 //Runtime variables
