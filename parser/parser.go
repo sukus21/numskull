@@ -10,6 +10,7 @@ import (
 type programContext struct {
 	jumplinepos         int
 	jumplinedestination int
+	startedLine         int
 }
 
 //Preprocess program
@@ -338,11 +339,13 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 					curlies = append(curlies, programContext{
 						jumplinepos:         lineStart,
 						jumplinedestination: len(program) - 1,
+						startedLine:         linecount,
 					})
 				} else if next == token.SquareStart {
 					squares = append(squares, programContext{
 						jumplinepos:         lineStart,
 						jumplinedestination: len(program) - 1,
+						startedLine:         linecount,
 					})
 				}
 
@@ -353,6 +356,18 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 			}
 		}
 	}
+
+	//Check for unclosed brackets
+	uncloser := func(brackets []programContext, brname string) {
+		for len(brackets) != 0 {
+			brac := brackets[len(brackets)-1]
+			brackets = brackets[:len(brackets)-1]
+			fmt.Printf("unmatched %s bracket at line %d\n", brname, brac.startedLine)
+			success = false
+		}
+	}
+	uncloser(curlies, "condition")
+	uncloser(squares, "looping")
 
 	//We done :)
 	close(errors)
