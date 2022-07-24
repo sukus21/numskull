@@ -212,7 +212,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 			cnt := []programContext(*cnts)[len(*cnts)-1]
 			*cnts = []programContext(*cnts)[:len(*cnts)-1]
 
-			//Was is a looping bracket?
+			//Was it a looping bracket?
 			if tok == token.SquareEnd {
 				program = append(program, float64(token.SquareEnd), float64(cnt.jumplinepos))
 			}
