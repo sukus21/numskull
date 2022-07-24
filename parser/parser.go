@@ -190,7 +190,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 			//Expect newline
 			if len(toks) > 2 || next != token.Newline {
-				e(fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName()))
+				e(fmt.Sprintf("Line %d: Expected newline, got '%s'", linecount, next.GetTokenName()))
 				continue
 			}
 
@@ -222,7 +222,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 		//Then this should be a number
 		if tok != token.Number {
-			e(fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, tok.GetTokenName()))
+			e(fmt.Sprintf("Line %d: Expected number, got '%s'", linecount, tok.GetTokenName()))
 			continue
 		}
 
@@ -238,7 +238,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 			//Unexpected newline
 			case token.Newline:
-				e(fmt.Sprintf("Line %d: Unexpected end of line.", linecount))
+				e(fmt.Sprintf("Line %d: Unexpected end of line", linecount))
 				stayIn = false
 
 			//Lefthand chaining
@@ -248,7 +248,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 				next := token.Token(toks[pos])
 				pos++
 				if next != token.Number {
-					e(fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.GetTokenName()))
+					e(fmt.Sprintf("Line %d: Expected number, got '%s'", linecount, next.GetTokenName()))
 					stayIn = false
 					break
 				}
@@ -268,7 +268,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 				//Was this not a newline?
 				if next != token.Newline {
-					e(fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName()))
+					e(fmt.Sprintf("Line %d: Expected newline, got '%s'", linecount, next.GetTokenName()))
 					break
 				}
 
@@ -285,7 +285,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 				//Expect number
 				if next != token.Number {
-					e(fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.GetTokenName()))
+					e(fmt.Sprintf("Line %d: Expected number, got '%s'", linecount, next.GetTokenName()))
 					break
 				}
 				num := toks[pos]
@@ -295,7 +295,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 				next = token.Token(toks[pos])
 				pos++
 				if next != token.Newline {
-					e(fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName()))
+					e(fmt.Sprintf("Line %d: Expected newline, got '%s'", linecount, next.GetTokenName()))
 					break
 				}
 
@@ -313,7 +313,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 				//Expect number
 				if next != token.Number {
-					e(fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.GetTokenName()))
+					e(fmt.Sprintf("Line %d: Expected number, got '%s'", linecount, next.GetTokenName()))
 					break
 				}
 				num := toks[pos]
@@ -348,7 +348,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 			//What on earth did you send me?
 			default:
-				e(fmt.Sprintf("Line %d: Unexpected %s found, expected operation.", linecount, tok.GetTokenName()))
+				e(fmt.Sprintf("Line %d: Expected operation, found '%s'", linecount, tok.GetTokenName()))
 				stayIn = false
 			}
 		}

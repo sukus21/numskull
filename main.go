@@ -539,7 +539,7 @@ func runProgram(program []float64) error {
 			}
 
 		default:
-			fmt.Print("Uh oh, something went fucky :(")
+			return fmt.Errorf("unknown operation '%s'", tok.GetTokenName())
 		}
 	}
 
