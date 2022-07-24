@@ -42,12 +42,11 @@ var outputFile *os.File = nil
 func main() {
 
 	//Uncomment only for debugging
-	os.Args = []string{
+	/*os.Args = []string{
 		os.Args[0],
-		"--input", "hello.bf",
-		"examples/brainfrick.nms",
-		//"examples/comments.nms",
-	}
+		//"--input", "examples/hello.bf",
+		//"examples/brainfrick.nms",
+	}*/
 
 	//No arguments provided
 	fmt.Println()
