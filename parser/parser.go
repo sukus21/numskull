@@ -10,6 +10,7 @@ import (
 type programContext struct {
 	jumplinepos         int
 	jumplinedestination int
+	startedLine         int
 }
 
 //Preprocess program
@@ -17,14 +18,14 @@ func ParseProgram(raw string) ([]float64, bool) {
 
 	//Different channels I need
 	lines := make(chan string)
-	Tokens := make(chan []float64)
+	tokens := make(chan []float64)
 	errors := make(chan error)
 
 	//Actually preprocess program
 	go logErrors(errors)
 	go programSeperate(*bytes.NewBufferString(raw), lines, errors)
-	go TokenizeLines(lines, Tokens, errors)
-	return validateTokens(Tokens, errors)
+	go TokenizeLines(lines, tokens, errors)
+	return validateTokens(tokens, errors)
 }
 
 //Seperate program per line
@@ -117,7 +118,7 @@ func programSeperate(program bytes.Buffer, lines chan<- string, errors chan<- er
 }
 
 //Handle lines
-func TokenizeLines(lines <-chan string, Tokens chan<- []float64, errors chan<- error) {
+func TokenizeLines(lines <-chan string, tokens chan<- []float64, errors chan<- error) {
 
 	//Repeat for as long as there are lines
 	linecount := 0
@@ -130,7 +131,7 @@ func TokenizeLines(lines <-chan string, Tokens chan<- []float64, errors chan<- e
 			//Read Token
 			tok, num, err := readToken(msg, &pos, linecount)
 			if err != nil {
-				fmt.Println(err.Error())
+				fmt.Println(err)
 			}
 
 			//Add Token to slice
@@ -148,15 +149,15 @@ func TokenizeLines(lines <-chan string, Tokens chan<- []float64, errors chan<- e
 		}
 
 		//Send this slice through channel
-		Tokens <- line
+		tokens <- line
 	}
 
 	//Alright, we done
-	close(Tokens)
+	close(tokens)
 }
 
 //Make sure this stuff is valid code, and construct finished program
-func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bool) {
+func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bool) {
 
 	//Finished program
 	program := make([]float64, 0, 1024)
@@ -164,8 +165,6 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 	squares := make([]programContext, 0, 64)
 
 	success := true
-	expectBracket := false
-	lastLine := 0
 	linecount := 0
 	lineStart := -1
 
@@ -175,7 +174,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 		success = false
 	}
 
-	for toks := range Tokens {
+	for toks := range tokens {
 		linecount++
 
 		//Is there anything on this line
@@ -185,13 +184,6 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 		//Expecting start bracket?
 		tok := token.Token(toks[0])
-		if expectBracket {
-			expectBracket = false
-			if tok != token.CurlyStart && tok != token.SquareStart {
-				e(fmt.Sprintf("Line %d-%d: Expected starting bracket, got %s.\n", lastLine, linecount, tok.GetTokenName()))
-				continue
-			}
-		}
 
 		//Is this an end bracket?
 		if tok == token.CurlyEnd || tok == token.SquareEnd {
@@ -199,7 +191,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 			//Expect newline
 			if len(toks) > 2 || next != token.Newline {
-				e(fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName()))
+				e(fmt.Sprintf("Line %d: Expected newline, got '%s'", linecount, next.GetTokenName()))
 				continue
 			}
 
@@ -221,7 +213,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 			cnt := []programContext(*cnts)[len(*cnts)-1]
 			*cnts = []programContext(*cnts)[:len(*cnts)-1]
 
-			//Was is a looping bracket?
+			//Was it a looping bracket?
 			if tok == token.SquareEnd {
 				program = append(program, float64(token.SquareEnd), float64(cnt.jumplinepos))
 			}
@@ -231,7 +223,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 		//Then this should be a number
 		if tok != token.Number {
-			e(fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, tok.GetTokenName()))
+			e(fmt.Sprintf("Line %d: Expected number, got '%s'", linecount, tok.GetTokenName()))
 			continue
 		}
 
@@ -247,7 +239,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 			//Unexpected newline
 			case token.Newline:
-				e(fmt.Sprintf("Line %d: Unexpected end of line.", linecount))
+				e(fmt.Sprintf("Line %d: Unexpected end of line", linecount))
 				stayIn = false
 
 			//Lefthand chaining
@@ -257,7 +249,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 				next := token.Token(toks[pos])
 				pos++
 				if next != token.Number {
-					e(fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.GetTokenName()))
+					e(fmt.Sprintf("Line %d: Expected number, got '%s'", linecount, next.GetTokenName()))
 					stayIn = false
 					break
 				}
@@ -277,7 +269,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 				//Was this not a newline?
 				if next != token.Newline {
-					e(fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName()))
+					e(fmt.Sprintf("Line %d: Expected newline, got '%s'", linecount, next.GetTokenName()))
 					break
 				}
 
@@ -294,7 +286,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 				//Expect number
 				if next != token.Number {
-					e(fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.GetTokenName()))
+					e(fmt.Sprintf("Line %d: Expected number, got '%s'", linecount, next.GetTokenName()))
 					break
 				}
 				num := toks[pos]
@@ -304,7 +296,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 				next = token.Token(toks[pos])
 				pos++
 				if next != token.Newline {
-					e(fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName()))
+					e(fmt.Sprintf("Line %d: Expected newline, got '%s'", linecount, next.GetTokenName()))
 					break
 				}
 
@@ -322,7 +314,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 
 				//Expect number
 				if next != token.Number {
-					e(fmt.Sprintf("Line %d: Expected number, got %s.\n", linecount, next.GetTokenName()))
+					e(fmt.Sprintf("Line %d: Expected number, got '%s'", linecount, next.GetTokenName()))
 					break
 				}
 				num := toks[pos]
@@ -333,16 +325,9 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 				pos++
 				if next != token.CurlyStart && next != token.SquareStart {
 
-					//Is it a newline?
-					if next == token.Newline {
-						//All is good
-						expectBracket = true
-						lastLine = linecount
-					} else {
-						//Nope throw an error
-						e(fmt.Sprintf("Line %d: Expected newline, got %s.\n", linecount, next.GetTokenName()))
-						break
-					}
+					//Nope throw an error
+					e(fmt.Sprintf("Line %d: Expected start bracket, got '%s'", linecount, next.GetTokenName()))
+					break
 				}
 
 				//Push operand and number into program
@@ -354,21 +339,35 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 					curlies = append(curlies, programContext{
 						jumplinepos:         lineStart,
 						jumplinedestination: len(program) - 1,
+						startedLine:         linecount,
 					})
 				} else if next == token.SquareStart {
 					squares = append(squares, programContext{
 						jumplinepos:         lineStart,
 						jumplinedestination: len(program) - 1,
+						startedLine:         linecount,
 					})
 				}
 
 			//What on earth did you send me?
 			default:
-				e(fmt.Sprintf("Line %d: Unexpected %s found, expected operation.", linecount, tok.GetTokenName()))
+				e(fmt.Sprintf("Line %d: Expected operation, found '%s'", linecount, tok.GetTokenName()))
 				stayIn = false
 			}
 		}
 	}
+
+	//Check for unclosed brackets
+	uncloser := func(brackets []programContext, brname string) {
+		for len(brackets) != 0 {
+			brac := brackets[len(brackets)-1]
+			brackets = brackets[:len(brackets)-1]
+			fmt.Printf("unmatched %s bracket at line %d\n", brname, brac.startedLine)
+			success = false
+		}
+	}
+	uncloser(curlies, "condition")
+	uncloser(squares, "looping")
 
 	//We done :)
 	close(errors)
@@ -378,7 +377,7 @@ func validateTokens(Tokens <-chan []float64, errors chan<- error) ([]float64, bo
 //Error logging function
 func logErrors(errors <-chan error) {
 	for err := range errors {
-		fmt.Println(err.Error())
+		fmt.Println(err)
 	}
 }
 

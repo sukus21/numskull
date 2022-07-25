@@ -21,8 +21,8 @@ const (
 
 //Version numbers
 const (
-	version_interpreter string = "v0.3.0-alpha"
-	version_language    string = "2.0.0-alpha"
+	version_interpreter string = "v0.2.1"
+	version_language    string = "1.1.1"
 )
 
 //Runtime variables
@@ -42,12 +42,11 @@ var outputFile *os.File = nil
 func main() {
 
 	//Uncomment only for debugging
-	os.Args = []string{
+	/*os.Args = []string{
 		os.Args[0],
-		"--input", "hello.bf",
-		"examples/brainfrick.nms",
-		//"examples/comments.nms",
-	}
+		//"--input", "examples/hello.bf",
+		//"examples/brainfrick.nms",
+	}*/
 
 	//No arguments provided
 	fmt.Println()
@@ -540,7 +539,7 @@ func runProgram(program []float64) error {
 			}
 
 		default:
-			fmt.Print("Uh oh, something went fucky :(")
+			return fmt.Errorf("unknown operation '%s'", tok.GetTokenName())
 		}
 	}
 
