@@ -29,6 +29,9 @@ const (
 	SquareStart
 	SquareEnd
 	Newline
+	FunctionStart
+	FunctionEnd
+	FunctionRun
 )
 
 //Returns the name of the given token as a string
@@ -83,6 +86,14 @@ func (tok Token) GetTokenName() string {
 		return "["
 	case SquareEnd:
 		return "]"
+
+	case FunctionStart:
+		return "<"
+	case FunctionEnd:
+		return ">"
+	case FunctionRun:
+		return "()"
+
 	case Newline:
 		return "newline"
 	case Invalid:

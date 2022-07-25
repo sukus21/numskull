@@ -383,163 +383,190 @@ func memoryRead(pos float64) float64 {
 //Main program function
 func runProgram(program []float64) error {
 
+	callstack := make([]int, 0, 64)
 	for readPos := 0; readPos < len(program); {
 
 		tok := token.Token(program[readPos])
 		readPos++
+		switch tok {
 
-		//Looping bracket?
-		if tok == token.SquareEnd {
+		//End of function (return)
+		case token.FunctionEnd:
+			if len(callstack) == 0 {
+				return fmt.Errorf("empty call stack, can't return from function")
+			}
+
+			readPos = callstack[len(callstack)-1]
+			callstack = callstack[:len(callstack)-1]
+
+		//Jump indicator
+		case token.FunctionStart, token.SquareEnd:
 
 			//Read jump point and jump
 			readPos = int(program[readPos])
 			continue
-		}
 
 		//It's a number
-		lefthand := program[readPos]
-		readPos++
-
-		//Start chaining lefthands
-		for {
-
-			//Make sure this is a chainer
-			tok = token.Token(program[readPos])
-			readPos++
-			if tok != token.ChainMinus && tok != token.ChainPlus {
-				break
-			}
+		case token.Number:
+			lefthand := program[readPos]
 			readPos++
 
-			//Chain lefthand
-			if tok == token.ChainMinus {
-				lefthand -= memoryRead(program[readPos])
-			} else {
-				lefthand += memoryRead(program[readPos])
-			}
-			readPos++
-		}
+			//Start chaining lefthands
+			for {
 
-		//We got us an operation
-		switch tok {
-		case token.Increment:
-			memory[lefthand] = memoryRead(lefthand) + 1
-		case token.Decrement:
-			memory[lefthand] = memoryRead(lefthand) - 1
-
-		case token.Assign:
-			readPos++
-			righthand := program[readPos]
-			readPos++
-			memory[lefthand] = memoryRead(righthand)
-		case token.Add:
-			readPos++
-			righthand := program[readPos]
-			readPos++
-			memory[lefthand] = memoryRead(lefthand) + memoryRead(righthand)
-		case token.Sub:
-			readPos++
-			righthand := program[readPos]
-			readPos++
-			memory[lefthand] = memoryRead(lefthand) - memoryRead(righthand)
-		case token.Multiply:
-			readPos++
-			righthand := program[readPos]
-			readPos++
-			memory[lefthand] = memoryRead(lefthand) * memoryRead(righthand)
-		case token.Divide:
-			readPos++
-			righthand := program[readPos]
-			readPos++
-			memory[lefthand] = memoryRead(lefthand) / memoryRead(righthand)
-
-		case token.PrintChar:
-			if consoleOutput {
-				fmt.Print(string(byte(memoryRead(lefthand))))
-			}
-			if writeToFile {
-				outputFile.Write([]byte{(byte(memoryRead(lefthand)))})
-			}
-		case token.PrintNumber:
-			if consoleOutput {
-				fmt.Print(memoryRead(lefthand))
-			}
-			if writeToFile {
-				outputFile.WriteString(fmt.Sprint(memoryRead(lefthand)))
-			}
-		case token.ReadInput:
-			//Read value
-			val, err := getInput()
-			if err != nil {
-				return err
-			}
-
-			//Assign it to memory
-			memory[lefthand] = val
-
-		case token.Equals:
-			readPos++
-			righthand := memoryRead(program[readPos])
-			readPos++
-			if memoryRead(lefthand) == righthand {
+				//Make sure this is a chainer
+				tok = token.Token(program[readPos])
 				readPos++
-			} else {
-				//Jump
-				readPos = int(program[readPos])
-			}
-		case token.Different:
-			readPos++
-			righthand := memoryRead(program[readPos])
-			readPos++
-			if memoryRead(lefthand) != righthand {
+				if tok != token.ChainMinus && tok != token.ChainPlus {
+					break
+				}
 				readPos++
-			} else {
-				//Jump
-				readPos = int(program[readPos])
-			}
-		case token.LessThan:
-			readPos++
-			righthand := memoryRead(program[readPos])
-			readPos++
-			if memoryRead(lefthand) < righthand {
+
+				//Chain lefthand
+				if tok == token.ChainMinus {
+					lefthand -= memoryRead(program[readPos])
+				} else {
+					lefthand += memoryRead(program[readPos])
+				}
 				readPos++
-			} else {
-				//Jump
-				readPos = int(program[readPos])
-			}
-		case token.LessEquals:
-			readPos++
-			righthand := memoryRead(program[readPos])
-			readPos++
-			if memoryRead(lefthand) <= righthand {
-				readPos++
-			} else {
-				//Jump
-				readPos = int(program[readPos])
-			}
-		case token.GreaterThan:
-			readPos++
-			righthand := memoryRead(program[readPos])
-			readPos++
-			if memoryRead(lefthand) > righthand {
-				readPos++
-			} else {
-				//Jump
-				readPos = int(program[readPos])
-			}
-		case token.GreaterEquals:
-			readPos++
-			righthand := memoryRead(program[readPos])
-			readPos++
-			if memoryRead(lefthand) >= righthand {
-				readPos++
-			} else {
-				//Jump
-				readPos = int(program[readPos])
 			}
 
-		default:
-			return fmt.Errorf("unknown operation '%s'", tok.GetTokenName())
+			//We got us an operation
+			switch tok {
+			case token.Increment:
+				memory[lefthand] = memoryRead(lefthand) + 1
+			case token.Decrement:
+				memory[lefthand] = memoryRead(lefthand) - 1
+
+			case token.Assign:
+				readPos++
+				righthand := program[readPos]
+				readPos++
+				memory[lefthand] = memoryRead(righthand)
+			case token.Add:
+				readPos++
+				righthand := program[readPos]
+				readPos++
+				memory[lefthand] = memoryRead(lefthand) + memoryRead(righthand)
+			case token.Sub:
+				readPos++
+				righthand := program[readPos]
+				readPos++
+				memory[lefthand] = memoryRead(lefthand) - memoryRead(righthand)
+			case token.Multiply:
+				readPos++
+				righthand := program[readPos]
+				readPos++
+				memory[lefthand] = memoryRead(lefthand) * memoryRead(righthand)
+			case token.Divide:
+				readPos++
+				righthand := program[readPos]
+				readPos++
+				memory[lefthand] = memoryRead(lefthand) / memoryRead(righthand)
+
+			case token.PrintChar:
+				if consoleOutput {
+					fmt.Print(string(byte(memoryRead(lefthand))))
+				}
+				if writeToFile {
+					outputFile.Write([]byte{(byte(memoryRead(lefthand)))})
+				}
+			case token.PrintNumber:
+				if consoleOutput {
+					fmt.Print(memoryRead(lefthand))
+				}
+				if writeToFile {
+					outputFile.WriteString(fmt.Sprint(memoryRead(lefthand)))
+				}
+			case token.ReadInput:
+				//Read value
+				val, err := getInput()
+				if err != nil {
+					return err
+				}
+
+				//Assign it to memory
+				memory[lefthand] = val
+
+			case token.Equals:
+				readPos++
+				righthand := memoryRead(program[readPos])
+				readPos++
+				if memoryRead(lefthand) == righthand {
+					readPos++
+				} else {
+					//Jump
+					readPos = int(program[readPos])
+				}
+			case token.Different:
+				readPos++
+				righthand := memoryRead(program[readPos])
+				readPos++
+				if memoryRead(lefthand) != righthand {
+					readPos++
+				} else {
+					//Jump
+					readPos = int(program[readPos])
+				}
+			case token.LessThan:
+				readPos++
+				righthand := memoryRead(program[readPos])
+				readPos++
+				if memoryRead(lefthand) < righthand {
+					readPos++
+				} else {
+					//Jump
+					readPos = int(program[readPos])
+				}
+			case token.LessEquals:
+				readPos++
+				righthand := memoryRead(program[readPos])
+				readPos++
+				if memoryRead(lefthand) <= righthand {
+					readPos++
+				} else {
+					//Jump
+					readPos = int(program[readPos])
+				}
+			case token.GreaterThan:
+				readPos++
+				righthand := memoryRead(program[readPos])
+				readPos++
+				if memoryRead(lefthand) > righthand {
+					readPos++
+				} else {
+					//Jump
+					readPos = int(program[readPos])
+				}
+			case token.GreaterEquals:
+				readPos++
+				righthand := memoryRead(program[readPos])
+				readPos++
+				if memoryRead(lefthand) >= righthand {
+					readPos++
+				} else {
+					//Jump
+					readPos = int(program[readPos])
+				}
+
+			case token.FunctionRun:
+
+				//Push current position onto program stack
+				callstack = append(callstack, readPos)
+				if len(callstack) == 32 {
+					fmt.Println("warning: callstack is big")
+				}
+
+				//Move read position and verify function
+				readPos = int(memoryRead(lefthand))
+				if program[readPos] != float64(token.FunctionStart) {
+					return fmt.Errorf("error: invalid function call")
+				}
+				readPos += 2
+
+			default:
+				return fmt.Errorf("unknown operation '%s'", tok.GetTokenName())
+			}
 		}
 	}
 
