@@ -18,7 +18,7 @@
  
  `<lefthand> <operation> [righthand] [bracket]`
 
- Both lefthand and righthand are numbers, but righthand isn't required for all operations, and brackets are only a necessity for the comparison operator. Below are examples of instructions:
+ Both lefthand and righthand are numbers, but righthand isn't required for all operations. Brackets are only a necessity for the comparison operations. Below are a few examples of some instructions:
  ```
  Assign a value:             10 = 60
  Decrement a value:          -5++
@@ -91,7 +91,7 @@
  - ### `?<=`: Lesser than or equal to
     Is true if the value of the lefthand is lesser than or equal to the value of the righthand.
  
- A comparison operator requires an opening bracket after the righthand operator. The bracket should be on the same line as the instruction, but it is not required. If a condition isn't met, the program skips ahead to the next closing bracket, and continues execution from there. In that way, the comparison operator acts like an equivelant to the `if`-statement in C. Closing brackets should always be on their own line, separate from any instructions.
+ A comparison operator requires an opening bracket after the righthand operator. The bracket should be on the same line as the condition instruction. If a condition isn't met, the program skips ahead to the next closing bracket of the same type at the same depth, and continues execution from there. In that way, the comparison operator acts like an equivelant to the `if`-statement in C. Closing brackets should always be on their own line, separate from any instructions.
  
  Below are two example programs and their outputs, to hopefully demonstrate how the comparison instruction works:
  ```c
@@ -122,7 +122,7 @@
  ```
  20
  ```
- Loops can be constructed using the comparison operator instead, by simple using square brackets `[]` instead of curly brackets `{}`. When a closing square bracket is encountered ( `]` ), the program skips back up to the matching opening brackets condition statement, and continues from there. If the condition is still true, the loop is run again. Otherwise the program skips to the closing bracket and continues from there. Using curly brackets to open and curly brackets to close (or the other way around) is not permitted.
+ Loops can be constructed using the comparison operator instead, by simple using square brackets `[]` instead of curly brackets `{}`. When a closing square bracket is encountered ( `]` ), the program skips back up to the matching opening brackets condition statement, and continues from there. If the condition is still true, the loop is run again. Otherwise the program skips to the closing bracket and continues from there. Brackets only close each other, meaning a `]` is required to close a `[`. The same applies to `}` and `{`.
 
  Below is an example program and its output, to demonstrate how a loop works:
  ```c
@@ -169,7 +169,7 @@
 ## Other language features
  - As of version 1.1, Numskull supports code comments. A comment can be started using `//`, and anything that comes after it on the same line will be ignored. Comments can also be multilined. These are started with `/*` and terminated with `*/`. Anything between the two will be ignored at runtime.
 
- - The interpreter does not care if brackets are opened and closed in pairs. This means you could use brackets in the following order: `{ [ } ]`. If the first `{` is taken, it jumps to the `}`, inside the body of the `[ ]`, and execution continues as normal from there, and when the `]` is encountered, the condition at the `[` is evaluated as normal. The same technique could be used to exit the body of the `[ ]` early.
+ - The interpreter does not care if brackets are opened and closed out of pairs. This means you could use brackets in the following order: `{ [ } ]`. If the first `{` is taken, it jumps to the `}`, inside the body of the `[ ]`, and execution continues as normal from there, and when the `]` is encountered, the condition at the `[` is evaluated as normal. The same technique could be used to exit the body of the `[ ]` early.
 
 
 ## More information
