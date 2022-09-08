@@ -1,0 +1,77 @@
+// Counts from 1 to 100.
+// If the number divides into 3, "Fizz" is printed.
+// If the number divides into 5, "Buzz" is printed.
+// If the number divides into neither, the number is printed.
+
+//print " Fizz"
+-1 = <
+    32#
+    70#
+    105#
+    122#
+    122#
+>
+
+//print " Buzz"
+-2 = <
+    32#
+    66#
+    117#
+    122#
+    122#
+>
+
+//Print number
+-3 = <
+    32#
+    -10!
+>
+
+//Number goes into [-9]
+-4 = <
+    -8 = 0
+    -10 ?> 0 [
+        -10 -= -9
+        -10 ?= 0 {
+            -8 = 1
+        }
+    ]
+>
+
+-5 = 100 //Number of iterations
+-7 = 0   //Current iteration
+
+//Main loop
+-7 ?< -5 [
+    -7++
+    -6 = 0
+
+    //Goes into 3 (fizz)
+    -9 = 3
+    -10 = -7
+    -4()
+    -8 ?! 0 {
+        -1()
+        -6 = 1
+    }
+
+    //Goes into 5 (buzz)
+    -9 = 5
+    -10 = -7
+    -4()
+    -8 ?! 0 {
+        -2()
+        -6 = 1
+    }
+
+    //Print number?
+    -6 ?= 0 {
+        -10 = -7
+        -3()
+    }
+
+    //Print comma (unless last iteration)
+    -7 ?< -5 {
+        44#
+    }
+]
