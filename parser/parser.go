@@ -163,6 +163,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 	program := make([]float64, 0, 1024)
 	curlies := make([]programContext, 0, 64)
 	squares := make([]programContext, 0, 64)
+	anglies := make([]programContext, 0, 64)
 
 	success := true
 	linecount := 0
@@ -186,7 +187,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 		tok := token.Token(toks[0])
 
 		//Is this an end bracket?
-		if tok == token.CurlyEnd || tok == token.SquareEnd {
+		if tok == token.CurlyEnd || tok == token.SquareEnd || tok == token.FunctionEnd {
 			next := token.Token(toks[1])
 
 			//Expect newline
@@ -195,27 +196,29 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 				continue
 			}
 
-			//Pop thing off the relevant stack
-			var cnts *[]programContext
+			//Get relevant stack
+			cnts := &squares
 			if tok == token.CurlyEnd {
 				cnts = &curlies
-			} else {
-				cnts = &squares
+			} else if tok == token.FunctionEnd {
+				cnts = &anglies
 			}
 
 			//Check if stack is empty
 			if len(*cnts) == 0 {
-				e(fmt.Sprintf("Line %d: Unmatched }.\n", linecount))
+				e(fmt.Sprintf("Line %d: Unmatched '%s'", linecount, tok.GetTokenName()))
 				continue
 			}
 
-			//It is not
+			//Pop context off stack
 			cnt := []programContext(*cnts)[len(*cnts)-1]
 			*cnts = []programContext(*cnts)[:len(*cnts)-1]
 
 			//Was it a looping bracket?
 			if tok == token.SquareEnd {
 				program = append(program, float64(token.SquareEnd), float64(cnt.jumplinepos))
+			} else if tok == token.FunctionEnd {
+				program = append(program, float64(token.FunctionEnd))
 			}
 			program[cnt.jumplinedestination] = float64(len(program))
 			continue
@@ -232,6 +235,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 		program = append(program, toks[0], toks[1])
 		pos := 2
 
+		//Operator or newline?
 		for stayIn := true; stayIn; {
 			tok = token.Token(toks[pos])
 			pos++
@@ -260,7 +264,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 				continue
 
 			//No righthand required
-			case token.Decrement, token.Increment, token.PrintChar, token.PrintNumber, token.ReadInput:
+			case token.Decrement, token.Increment, token.PrintChar, token.PrintNumber, token.ReadInput, token.FunctionRun:
 
 				//Read next Token
 				stayIn = false
@@ -277,7 +281,40 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 				program = append(program, float64(tok))
 
 			//Righthand required
-			case token.Assign, token.Add, token.Sub, token.Multiply, token.Divide:
+			case token.Assign:
+
+				//Or a function, that works too
+				stayIn = false
+				next := token.Token(toks[pos])
+				if next == token.FunctionStart {
+
+					//Expect newline
+					pos++
+					next = token.Token(toks[pos])
+					pos++
+					if next != token.Newline {
+						e(fmt.Sprintf("Line %d: Expected newline, got '%s'", linecount, next.GetTokenName()))
+						break
+					}
+
+					//Push operand and pointer onto program stack
+					jpos := len(program) + 3
+					program = append(program, float64(tok), float64(token.Number), float64(jpos), float64(token.FunctionStart), 0)
+
+					//Function shenanigans
+					anglies = append(anglies, programContext{
+						jumplinedestination: len(program) - 1,
+						jumplinepos:         len(program) - 2,
+						startedLine:         linecount,
+					})
+
+					//Repeat loop
+					continue
+				}
+				fallthrough
+
+			//Righthand still required
+			case token.Add, token.Sub, token.Multiply, token.Divide:
 
 				//Read next Token
 				stayIn = false
@@ -368,6 +405,7 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 	}
 	uncloser(curlies, "condition")
 	uncloser(squares, "looping")
+	uncloser(anglies, "function")
 
 	//We done :)
 	close(errors)
@@ -454,6 +492,14 @@ func readToken(text string, pos *int, line int) (token.Token, float64, error) {
 		return token.ChainMinus, 0, nil
 	case "+":
 		return token.ChainPlus, 0, nil
+
+	//Function related
+	case "<":
+		return token.FunctionStart, 0, nil
+	case ">":
+		return token.FunctionEnd, 0, nil
+	case "()":
+		return token.FunctionRun, 0, nil
 
 	//Default
 	default:

@@ -15,4 +15,4 @@
 
 ---
 
-This project is maintained on [Github](http://github.com/sukus21/numskull).
+This project is maintained on [GitHub](http://github.com/sukus21/numskull).

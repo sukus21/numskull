@@ -1,5 +1,5 @@
 # Numskull language specification
- `numskull version 1.1`
+ `numskull version 1.2`
 
 ## History
  The idea for Numskull was concieved the 11th of February 2022.
@@ -7,9 +7,9 @@
  The idea was to make a programming language, where numbers weren't constant, but mutable. The first version of the interpreter was written over that same weekend `(feb. 11-13 2022)`. Language features and syntax was decided as I was implementing them, and were not planned out from the start.
 
 ## General information
- In this language there are no variables, and letters are forbidden. Only numbers and symbols are allowed. The language's gimmick is the ability to assign a number to be equal to another number. This means that all numbers are variables, containing themselves by default. This means all integer numbers, negative numbers, decimal numbers and decimal negative numbers can store values and are valid values to be stored. 
+ In this language there are no variables, and letters are forbidden. Only numbers and symbols are allowed. The language's gimmick is that all numbers are mutable, meaning their value can be reassigned, but contain themselves by default. This means all integer numbers, negative numbers, decimal numbers and decimal negative numbers can store values and are valid values to be stored. 
  
- All values (and keys) are represented by a 64-bit float. The language only supports real numbers as input, but NaN and infinity values can be created during runtime (doing this is strongly discouraged, unless you know what you're doing).
+ All numbers in Numskull are stored and operated on as double precision (64bit) floating point numbers. The language only supports real numbers as input, but NaN and infinity values can be created during runtime (doing this is strongly discouraged, unless you know what you're doing).
 
 
 
@@ -19,10 +19,10 @@
  `<lefthand> <operation> [righthand] [bracket]`
 
  Both lefthand and righthand are numbers, but righthand isn't required for all operations. Brackets are only a necessity for the comparison operations. Below are a few examples of some instructions:
- ```
- Assign a value:             10 = 60
- Decrement a value:          -5++
- Addition plus assignment:   7.56 += 7
+ ```c
+ 10 = 60       //Assign a value
+ -5++          //Decrement a value
+ 7.56 += 7     //Addition plus assignment
  ```
 
 ## Operations
@@ -66,6 +66,10 @@
  - ### `"`: Read input
     Reads a number from the input and stored it in the lefthand. The number read can be either from a file, either as binary or text, or can be input via the commandline.
     <br>*Example:* `-60"` reads a value and stores it in `-60`.
+
+ - ### `()`: Function call
+    Calls the function stored at the location of the lefthand. If the lefthand does not contain a function, the program will crash. More information about functions can be found [here](#functions).
+    <br>*Example:* `99()` will call the function stored in `99`.
 
  - ### `?x`: Comparison
     Requires a bracket at the end of the instruction. Tests the value of the lefthand compared to the value of the righthand. If the condition is not met, the program jumps to the next closing bracket of matching type at the same level and continues executing from there. Further documented in the next chapter.
@@ -147,8 +151,7 @@
  `<base> [+/- offset] [+/- offset]...`
 
  It is easier to illustrate using examples:
- - `5+8+6` sets the lefthand to be equal to 5 plus the value of 8 plus the value of 6.
-
+ - `5+8+6` sets the lefthand to be equal to 5 plus the value at 8 plus the value at 6.
  - `5.5 - -7` sets the lefthand to be equal to 5.5 minus the value of -7. (Important: When chaining by subtraction, whitespace is always reqired between the chain operator and the number itself.)
 
 
@@ -166,6 +169,19 @@
 
  The righthand cannot be chained, and must always be just one number.
 
+## Functions
+ Introduced in version 1.2, Numskull supports functions. A function is a piece of code you define once, and can then jump to whenever you want. 
+
+ Functions in Numskull are declared like so:
+ ```
+ <lefthand> = <
+     [instructions...]
+ >
+ ```
+
+ When a function has been declared, it can be called with the [function call operator](#function-call) mentioned earlier. When a function is called, code execution jumps to the called function, and continues execution from there. Execution starts at the function start bracket `<`, and returns to where the function was called, when the function end bracket `>` is encountered. <br>
+ Do note:  If a function end brace is encountered WITHOUT any function being called, the program will crash.
+
 ## Other language features
  - As of version 1.1, Numskull supports code comments. A comment can be started using `//`, and anything that comes after it on the same line will be ignored. Comments can also be multilined. These are started with `/*` and terminated with `*/`. Anything between the two will be ignored at runtime.
 
@@ -178,4 +194,4 @@
  
  ---
  
- This project is maintained on [Github](http://github.com/sukus21/numskull).
+ This project is maintained on [GitHub](http://github.com/sukus21/numskull).
