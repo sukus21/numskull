@@ -1,35 +1,12 @@
 package utils
 
 import (
-	"fmt"
 	"strconv"
+	"strings"
 )
 
-//Converts a slice of bytes to a float64
+// Converts a slice of bytes to a float64
 func BytesliceToNumber(numData []byte) (float64, error) {
-
-	//Empty string
-	if len(numData) == 0 {
-		return 0, fmt.Errorf("number has no length")
-	}
-
-	//Only a - sign
-	if len(numData) == 1 && numData[0] == '-' {
-		return 0, fmt.Errorf("invalid number, just a - sign")
-	}
-
-	//Unclosed comma
-	lastChar := numData[len(numData)-1]
-	if lastChar == ',' || lastChar == '.' {
-		return 0, fmt.Errorf("expected fraction after decimal point")
-	}
-
-	//Convert to number
-	number, err := strconv.ParseFloat(string(numData), 64)
-	if err != nil {
-		return 0, err
-	}
-
-	//Conversion succesful :)
-	return number, nil
+	str := strings.Trim(string(numData), " \t\n\r")
+	return strconv.ParseFloat(string(str), 64)
 }

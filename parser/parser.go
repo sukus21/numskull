@@ -3,8 +3,9 @@ package parser
 import (
 	"bytes"
 	"fmt"
-	"numskull/token"
-	"numskull/utils"
+
+	"github.com/sukus21/numskull/token"
+	"github.com/sukus21/numskull/utils"
 )
 
 type programContext struct {
@@ -13,7 +14,7 @@ type programContext struct {
 	startedLine         int
 }
 
-//Preprocess program
+// Preprocess program
 func ParseProgram(raw string) ([]float64, bool) {
 
 	//Different channels I need
@@ -28,7 +29,7 @@ func ParseProgram(raw string) ([]float64, bool) {
 	return validateTokens(tokens, errors)
 }
 
-//Seperate program per line
+// Seperate program per line
 func programSeperate(program bytes.Buffer, lines chan<- string, errors chan<- error) {
 
 	currentLine := ""
@@ -117,7 +118,7 @@ func programSeperate(program bytes.Buffer, lines chan<- string, errors chan<- er
 	close(lines)
 }
 
-//Handle lines
+// Handle lines
 func TokenizeLines(lines <-chan string, tokens chan<- []float64, errors chan<- error) {
 
 	//Repeat for as long as there are lines
@@ -156,7 +157,7 @@ func TokenizeLines(lines <-chan string, tokens chan<- []float64, errors chan<- e
 	close(tokens)
 }
 
-//Make sure this stuff is valid code, and construct finished program
+// Make sure this stuff is valid code, and construct finished program
 func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bool) {
 
 	//Finished program
@@ -412,14 +413,14 @@ func validateTokens(tokens <-chan []float64, errors chan<- error) ([]float64, bo
 	return program, success
 }
 
-//Error logging function
+// Error logging function
 func logErrors(errors <-chan error) {
 	for err := range errors {
 		fmt.Println(err)
 	}
 }
 
-//Grab token
+// Grab token
 func readToken(text string, pos *int, line int) (token.Token, float64, error) {
 
 	//Read a "word"
@@ -507,7 +508,7 @@ func readToken(text string, pos *int, line int) (token.Token, float64, error) {
 	}
 }
 
-//Um
+// Um
 func readWord(text string, pos *int) (string, bool) {
 	char := getNextNonWhitespace(text, pos)
 	if char == 0 {
@@ -553,7 +554,7 @@ func readWord(text string, pos *int) (string, bool) {
 	}
 }
 
-//Get the next non-whitespace program character
+// Get the next non-whitespace program character
 func getNextNonWhitespace(text string, pos *int) byte {
 	for *pos < len(text) {
 		if val := getNextChar(text, pos); !isWhitespace(val) {
@@ -565,7 +566,7 @@ func getNextNonWhitespace(text string, pos *int) byte {
 	return 0
 }
 
-//Get the next program character
+// Get the next program character
 func getNextChar(text string, pos *int) byte {
 	if *pos == len(text) {
 		return 0
@@ -576,7 +577,7 @@ func getNextChar(text string, pos *int) byte {
 	return char
 }
 
-//Is the given character whitespace or not?
+// Is the given character whitespace or not?
 func isWhitespace(char byte) bool {
 
 	//Is the character any of the given values?
