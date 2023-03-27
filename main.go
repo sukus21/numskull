@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/sukus21/numskull/interpreter"
 	"github.com/sukus21/numskull/parser"
@@ -10,12 +11,14 @@ import (
 
 // Usage strings
 const (
-	usage_v string = "-v, --version         Prints program version number"
-	usage_h string = "-h, --help <argument> Prints usage for given argument"
-	usage_i string = "-i, --input <path>    File to read input from"
-	usage_o string = "-o, --output <path>   File to print output to"
-	usage_t string = "-t, --type            Tells program to read input file as text"
-	usage_c string = "-c, --console         Force program output to console"
+	usage_v string = "-v, --version                Prints program version number"
+	usage_h string = "-h, --help <argument>        Prints usage for given argument"
+	usage_i string = "-i, --input <path>           File to read input from"
+	usage_o string = "-o, --output <path>          File to print output to"
+	usage_t string = "-t, --type                   Tells program to read input file as text"
+	usage_c string = "-c, --console                Force program output to console"
+	usage_d string = "-d, --depth-warn <number>    Warn at call depth"
+	usage_q string = "-q, --depth-quit <number>    Quit at call depth"
 )
 
 // Version numbers
@@ -42,7 +45,8 @@ func main() {
 
 	//Read and process arguments
 	var somethingDone bool = false
-	for argPos := 1; argPos < len(os.Args); argPos++ {
+	argPos := 1
+	for ; argPos < len(os.Args); argPos++ {
 		switch os.Args[argPos] {
 
 		//Help :)
@@ -114,7 +118,7 @@ func main() {
 				fmt.Println("Some may not want this behaviour, so passing in", "-"+os.Args[argPos], "will make input read as text.")
 				fmt.Println("Entries are read as numbers, seperated by whitespace (tabs, spaces, or newlines).")
 				fmt.Println("An incorrectly formatted entry will cause an error when trying to read it.")
-				fmt.Println("If the -i argument isn't present, this argument does nothing.")
+				fmt.Println("If the '-i' argument isn't present, this argument does nothing.")
 
 			//Help for the console tag
 			case "c", "C", "console":
@@ -122,7 +126,25 @@ func main() {
 				fmt.Println()
 				fmt.Println("When outputting to a file, console output is turned off by default.")
 				fmt.Println("Use this argument to reenable it, while also writing the output to a file, using -o.")
-				fmt.Println("If the -o argument isn't present, this argument does nothing.")
+				fmt.Println("If the '-o' argument isn't present, this argument does nothing.")
+
+			//Help for call depth warning tag
+			case "d", "D", "depth-warn":
+				fmt.Println(usage_d)
+				fmt.Println()
+				fmt.Println("Recursion is fun and all, but can get out of hand quickly.")
+				fmt.Println("With this argument, you can make the interpreter spit warnings when the given depth is reached.")
+				fmt.Println("The default value for this argument is 32.")
+				fmt.Println("If you don't want any warnings, set this to -1.")
+				fmt.Println("If you want to stop execution entirely when reaching a certain depth, check out the flag '-q'.")
+
+			case "q", "Q", "depth-quit":
+				fmt.Println(usage_q)
+				fmt.Println()
+				fmt.Println("If you want to make sure you don't destroy your stack, set this flag.")
+				fmt.Println("This will make the application quit completely when the given call depth is reached.")
+				fmt.Println("The default value for this argument is to never quit.")
+				fmt.Println("If you just want warnings when reaching high call depth, check out the flag '-d'.")
 
 			default:
 				fmt.Println("Error: unknown argument.")
@@ -168,8 +190,8 @@ func main() {
 			//Update stuff
 			f, err := os.Create(os.Args[argPos])
 			if err != nil {
-				fmt.Println("Error creating output file")
-				fmt.Println(err.Error())
+				fmt.Println("Error: could not create output file")
+				fmt.Println(err)
 				return
 			}
 			runner.SetOutputFile(f)
@@ -196,14 +218,54 @@ func main() {
 			//Open file
 			f, err := os.Open(os.Args[argPos])
 			if err != nil {
-				fmt.Println("Error while opening input file")
-				fmt.Println(err.Error())
+				fmt.Println("Error: could not open input file")
+				fmt.Println(err)
 				fmt.Println(usage_i)
 				return
 			}
 
 			runner.SetInputFile(f)
 			runner.ReadFromFile = true
+
+		case "-d", "-D", "--depth-warn":
+			//No depth specified
+			if argPos >= len(os.Args)-1 {
+				fmt.Println("Error: no depth was specified")
+				fmt.Println(usage_d)
+				break
+			}
+
+			argPos++
+			depth, err := strconv.Atoi(os.Args[argPos])
+			if err != nil {
+				fmt.Println("Error: value for argument'" + os.Args[argPos-1] + "' should be integer")
+				fmt.Println(err)
+				fmt.Println(usage_d)
+				break
+			}
+
+			//Apply
+			runner.WarnDepth = depth
+
+		case "-q", "-Q", "--depth-quit":
+			//No depth specified
+			if argPos >= len(os.Args)-1 {
+				fmt.Println("Error: no depth was specified")
+				fmt.Println(usage_q)
+				break
+			}
+
+			argPos++
+			depth, err := strconv.Atoi(os.Args[argPos])
+			if err != nil {
+				fmt.Println("Error: value for argument'" + os.Args[argPos-1] + "' should be integer")
+				fmt.Println(err)
+				fmt.Println(usage_q)
+				break
+			}
+
+			//Apply
+			runner.QuitDepth = depth
 
 		//Unknown parameter
 		default:
@@ -219,15 +281,18 @@ func main() {
 
 	//No more arguments? Was anything achieved?
 	finArg := os.Args[len(os.Args)-1]
-	if finArg[0] == '-' && somethingDone {
+	if argPos >= len(os.Args)-1 {
+		if !somethingDone {
+			fmt.Println("Error: no program file specified")
+		}
 		return
 	}
 
 	//Try to read program file
 	file, err := os.ReadFile(finArg)
 	if err != nil {
-		fmt.Println("Error opening program file")
-		fmt.Println(err.Error())
+		fmt.Println("Error: could not open program file")
+		fmt.Println(err)
 		return
 	}
 
@@ -248,7 +313,7 @@ func main() {
 		fmt.Println()
 		if err != nil {
 			//Print error
-			fmt.Println(err.Error())
+			fmt.Println(err)
 		} else {
 			//Program finished :)
 			fmt.Println("Program finished :)")
@@ -269,4 +334,6 @@ func printUsage() {
 	fmt.Println("\t", usage_t)
 	fmt.Println("\t", usage_o)
 	fmt.Println("\t", usage_c)
+	fmt.Println("\t", usage_d)
+	fmt.Println("\t", usage_q)
 }

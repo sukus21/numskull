@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/sukus21/numskull/token"
 
@@ -14,6 +15,8 @@ func New() *interpreter {
 	return &interpreter{
 		memory:        make(map[float64]float64),
 		WriteToStdout: true,
+		QuitDepth:     -1,
+		WarnDepth:     32,
 	}
 }
 
@@ -22,6 +25,8 @@ type interpreter struct {
 	WriteToFile   bool
 	ReadFromFile  bool
 	InputText     bool
+	WarnDepth     int
+	QuitDepth     int
 	outputFile    io.WriteCloser
 	outputWriter  io.Writer
 	inputReader   *bufio.Reader
@@ -267,8 +272,17 @@ func (inter *interpreter) Execute(program []float64) error {
 
 				//Push current position onto program stack
 				callstack = append(callstack, readPos)
-				if len(callstack) == 32 {
-					fmt.Println("warning: callstack is big")
+				if len(callstack) == inter.WarnDepth {
+					fmt.Fprintf(os.Stderr, "------------------------------------\n")
+					fmt.Fprintf(os.Stderr, " WARNING: call depth of %d reached \n", inter.QuitDepth)
+					fmt.Fprintf(os.Stderr, "------------------------------------\n")
+				}
+				if len(callstack) == inter.QuitDepth {
+					fmt.Fprintln(os.Stderr)
+					fmt.Fprintf(os.Stderr, "-------------------------------------------\n")
+					fmt.Fprintf(os.Stderr, " FATAL QUIT: max call depth of %d reached \n", inter.QuitDepth)
+					fmt.Fprintf(os.Stderr, "-------------------------------------------\n")
+					os.Exit(1)
 				}
 
 				//Move read position and verify function
