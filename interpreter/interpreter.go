@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/sukus21/numskull/token"
 
@@ -122,7 +123,7 @@ func (inter *interpreter) Execute(program []float64) error {
 		//End of function (return)
 		case token.FunctionEnd:
 			if len(callstack) == 0 {
-				return fmt.Errorf("empty call stack, can't return from function")
+				return printError("FATAL: cannot return from function, call stack empty")
 			}
 
 			readPos = callstack[len(callstack)-1]
@@ -201,7 +202,7 @@ func (inter *interpreter) Execute(program []float64) error {
 				//Read value
 				val, err := inter.getInput()
 				if err != nil {
-					return err
+					return printError("FATAL: %s", err)
 				}
 
 				//Assign it to memory
@@ -273,27 +274,21 @@ func (inter *interpreter) Execute(program []float64) error {
 				//Push current position onto program stack
 				callstack = append(callstack, readPos)
 				if len(callstack) == inter.WarnDepth {
-					fmt.Fprintf(os.Stderr, "------------------------------------\n")
-					fmt.Fprintf(os.Stderr, " WARNING: call depth of %d reached \n", inter.QuitDepth)
-					fmt.Fprintf(os.Stderr, "------------------------------------\n")
+					printError(fmt.Sprintf("WARNING: call depth of %d reached", inter.WarnDepth))
 				}
 				if len(callstack) == inter.QuitDepth {
-					fmt.Fprintln(os.Stderr)
-					fmt.Fprintf(os.Stderr, "-------------------------------------------\n")
-					fmt.Fprintf(os.Stderr, " FATAL QUIT: max call depth of %d reached \n", inter.QuitDepth)
-					fmt.Fprintf(os.Stderr, "-------------------------------------------\n")
-					os.Exit(1)
+					return printError(fmt.Sprintf("FATAL: max call depth of %d reached", inter.QuitDepth))
 				}
 
 				//Move read position and verify function
 				readPos = int(inter.memoryRead(lefthand))
 				if program[readPos] != float64(token.FunctionStart) {
-					return fmt.Errorf("error: invalid function call")
+					return printError("FATAL: invalid function call")
 				}
 				readPos += 2
 
 			default:
-				return fmt.Errorf("unknown operation '%s'", tok.GetTokenName())
+				return printError("FATAL: unknown operation '%s'", tok.GetTokenName())
 			}
 		}
 	}
@@ -309,4 +304,14 @@ func (inter *interpreter) Close() {
 	if inter.outputFile != nil {
 		inter.outputFile.Close()
 	}
+}
+
+// Pretty formatted error messages to stdout
+func printError(raw string, args ...any) error {
+	msg := fmt.Sprintf(raw, args...)
+	fmt.Fprintf(os.Stderr, "%s\n  %s  \n%s\n",
+		strings.Repeat("_", len(msg)+4),
+		msg,
+		strings.Repeat("‾", len(msg)+4))
+	return fmt.Errorf(msg)
 }
